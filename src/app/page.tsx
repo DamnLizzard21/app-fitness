@@ -2604,7 +2604,7 @@ export default function FitApp() {
                             <div>
                               <h5 className="font-medium text-gray-300 mb-2">Ingredientes:</h5>
                               <ul className="text-sm text-gray-400 space-y-1">
-                                {meal.ingredients.map((ingredient, i) => (
+                                {meal.ingredients.map((ingredient: Ingredient, i: number) => (
                                   <li key={i} className="flex justify-between">
                                     <span>• {ingredient.name}</span>
                                     <span className="text-emerald-400 font-medium">
@@ -2634,7 +2634,7 @@ export default function FitApp() {
                                   <div>
                                     <h4 className="font-semibold text-gray-300 mb-2">Ingredientes com Quantidades:</h4>
                                     <ul className="space-y-2">
-                                      {meal.ingredients.map((ingredient, i) => (
+                                      {meal.ingredients.map((ingredient: Ingredient, i: number) => (
                                         <li key={i} className="flex justify-between items-center p-2 bg-slate-700/50 rounded">
                                           <span>{ingredient.name}</span>
                                           <span className="text-emerald-400 font-bold">
@@ -2876,7 +2876,7 @@ export default function FitApp() {
                   <div>
                     <h4 className="font-semibold text-gray-300 mb-2">Ingredientes:</h4>
                     <ul className="text-sm text-gray-400 space-y-1 max-h-32 overflow-y-auto">
-                      {recipe.ingredients.slice(0, 4).map((ingredient, i) => (
+                      {recipe.ingredients.slice(0, 4).map((ingredient: Ingredient, i) => (
                         <li key={i} className="flex justify-between">
                           <span>• {ingredient.name}</span>
                           <span className="text-emerald-400 font-medium">
@@ -2916,7 +2916,7 @@ export default function FitApp() {
                         <div>
                           <h4 className="font-semibold text-gray-300 mb-2">Ingredientes:</h4>
                           <ul className="space-y-2">
-                            {recipe.ingredients.map((ingredient, i) => (
+                            {recipe.ingredients.map((ingredient: Ingredient, i: number) => (
                               <li key={i} className="flex justify-between items-center p-2 bg-slate-700/50 rounded">
                                 <span>{ingredient.name}</span>
                                 <span className="text-emerald-400 font-bold">
