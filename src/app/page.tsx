@@ -66,16 +66,41 @@ import {
   Save,
   Edit,
   BookOpen,
-  PlayCircle,
-  Globe,
-  UserCog,
-  Plus,
-  Minus,
-  RotateCcw
+  PlayCircle
 } from 'lucide-react'
-import { useLanguage } from '@/contexts/LanguageContext'
-import { useAuth } from '@/contexts/AuthContext'
-import { Language } from '@/lib/i18n'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  height: string
+  weight: string
+  age: string
+  gender: string
+  goal: string
+  currentActivity: string
+  trainingLevel: string
+  sleepHours: string
+  workType: string
+  stressLevel: string
+  waterIntake: string
+  mealFrequency: string
+  dietRestrictions: string
+  supplementUse: string
+  motivation: string
+  medicalHistory: string
+  chronicDiseases: string
+  medications: string
+  injuries: string
+  isPro: boolean
+  createdAt: Date
+  currentWeight: string
+  targetWeight: string
+  weeklyWeightLoss: number
+  completedWorkouts: number
+  totalCaloriesBurned: number
+  streakDays: number
+}
 
 interface QuestionnaireData {
   height: string
@@ -182,20 +207,6 @@ interface WorkoutLog {
   date: string
 }
 
-interface DailyWorkoutEntry {
-  date: string
-  exercises: {
-    [exerciseId: string]: {
-      weight: number
-      reps: number
-      completed: boolean
-    }
-  }
-  totalTime: number
-  caloriesBurned: number
-  notes: string
-}
-
 interface GymWorkout {
   day: string
   focus: string
@@ -203,9 +214,9 @@ interface GymWorkout {
 }
 
 export default function FitApp() {
-  const { language, setLanguage, t } = useLanguage()
-  const { currentUser, isAuthenticated, login, register, logout, updateUser, updateUserProgress } = useAuth()
-  const [currentStep, setCurrentStep] = useState<'home' | 'login' | 'register' | 'questionnaire' | 'assessment' | 'pro' | 'free' | 'dashboard' | 'diet' | 'workout' | 'products' | 'progress' | 'purchased' | 'challenge' | 'recipes' | 'account' | 'admin'>('home')
+  const [currentStep, setCurrentStep] = useState<'home' | 'login' | 'register' | 'questionnaire' | 'assessment' | 'pro' | 'free' | 'dashboard' | 'diet' | 'workout' | 'products' | 'progress' | 'purchased' | 'challenge' | 'recipes'>('home')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [loginData, setLoginData] = useState({ email: '', password: '' })
   const [registerData, setRegisterData] = useState({ name: '', email: '', password: '', confirmPassword: '' })
@@ -240,55 +251,22 @@ export default function FitApp() {
   const [workoutLocation, setWorkoutLocation] = useState<'outdoor' | 'home' | 'gym' | ''>('')
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([])
   const [selectedDay, setSelectedDay] = useState<string>('segunda')
-  const [dailyWorkouts, setDailyWorkouts] = useState<DailyWorkoutEntry[]>([])
-  const [exerciseWeights, setExerciseWeights] = useState<{[key: string]: number}>({})
-  const [exerciseReps, setExerciseReps] = useState<{[key: string]: number}>({})
 
-  // Redirecionar usuário autenticado para dashboard
+  // Simular dados do usuário logado
   useEffect(() => {
-    if (isAuthenticated && currentUser && currentStep === 'home') {
-      setCurrentStep('dashboard')
-    }
-  }, [isAuthenticated, currentUser, currentStep])
-
-  // Carregar dados salvos
-  useEffect(() => {
-    if (currentUser) {
-      const savedWorkouts = localStorage.getItem(`dailyWorkouts_${currentUser.id}`)
-      if (savedWorkouts) {
-        setDailyWorkouts(JSON.parse(savedWorkouts))
+    if (isAuthenticated && currentUser) {
+      // Simular dados reais atualizados
+      const updatedUser = {
+        ...currentUser,
+        currentWeight: (parseFloat(currentUser.weight) - currentUser.weeklyWeightLoss).toFixed(1),
+        completedWorkouts: Math.floor(Math.random() * 25) + 10,
+        totalCaloriesBurned: Math.floor(Math.random() * 3000) + 1500,
+        streakDays: Math.floor(Math.random() * 14) + 1,
+        weeklyWeightLoss: Math.random() * 2 + 0.5
       }
-      
-      const savedWeights = localStorage.getItem(`exerciseWeights_${currentUser.id}`)
-      if (savedWeights) {
-        setExerciseWeights(JSON.parse(savedWeights))
-      }
-      
-      const savedReps = localStorage.getItem(`exerciseReps_${currentUser.id}`)
-      if (savedReps) {
-        setExerciseReps(JSON.parse(savedReps))
-      }
+      setCurrentUser(updatedUser)
     }
-  }, [currentUser])
-
-  // Salvar dados quando mudarem
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(`dailyWorkouts_${currentUser.id}`, JSON.stringify(dailyWorkouts))
-    }
-  }, [dailyWorkouts, currentUser])
-
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(`exerciseWeights_${currentUser.id}`, JSON.stringify(exerciseWeights))
-    }
-  }, [exerciseWeights, currentUser])
-
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(`exerciseReps_${currentUser.id}`, JSON.stringify(exerciseReps))
-    }
-  }, [exerciseReps, currentUser])
+  }, [isAuthenticated])
 
   // Treinos de Academia por Dia da Semana
   const gymWorkouts: GymWorkout[] = [
@@ -317,6 +295,16 @@ export default function FitApp() {
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
+          id: 'crucifixo',
+          name: 'Crucifixo',
+          muscleGroup: 'Peito',
+          reps: '12-15',
+          sets: 3,
+          description: 'Isolamento do peitoral com amplitude completa',
+          tips: 'Controle o movimento, evite usar muito peso',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
           id: 'desenvolvimento-ombros',
           name: 'Desenvolvimento de Ombros',
           muscleGroup: 'Ombros',
@@ -327,6 +315,26 @@ export default function FitApp() {
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
+          id: 'elevacao-lateral',
+          name: 'Elevação Lateral',
+          muscleGroup: 'Ombros',
+          reps: '12-15',
+          sets: 3,
+          description: 'Isolamento do deltoide médio',
+          tips: 'Eleve até a altura dos ombros, pause e desça controlado',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'elevacao-frontal',
+          name: 'Elevação Frontal',
+          muscleGroup: 'Ombros',
+          reps: '10-12',
+          sets: 3,
+          description: 'Trabalha a parte anterior do deltoide',
+          tips: 'Mantenha o core contraído durante o movimento',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
           id: 'triceps-pulley',
           name: 'Tríceps Pulley',
           muscleGroup: 'Tríceps',
@@ -334,6 +342,16 @@ export default function FitApp() {
           sets: 3,
           description: 'Isolamento do tríceps',
           tips: 'Mantenha os cotovelos fixos ao lado do corpo',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'triceps-testa',
+          name: 'Tríceps Testa',
+          muscleGroup: 'Tríceps',
+          reps: '10-12',
+          sets: 3,
+          description: 'Exercício de isolamento para tríceps',
+          tips: 'Desça a barra até próximo da testa, suba controlado',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         }
       ]
@@ -363,6 +381,26 @@ export default function FitApp() {
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
+          id: 'remada-curvada',
+          name: 'Remada Curvada',
+          muscleGroup: 'Costas',
+          reps: '8-10',
+          sets: 3,
+          description: 'Exercício composto para costas',
+          tips: 'Mantenha a coluna neutra, puxe a barra até o abdômen',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'pulldown',
+          name: 'Pulldown',
+          muscleGroup: 'Costas',
+          reps: '12-15',
+          sets: 3,
+          description: 'Isolamento do latíssimo',
+          tips: 'Foque na contração das costas, não dos braços',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
           id: 'rosca-direta',
           name: 'Rosca Direta',
           muscleGroup: 'Bíceps',
@@ -370,6 +408,26 @@ export default function FitApp() {
           sets: 4,
           description: 'Exercício básico para bíceps',
           tips: 'Controle a descida, não balance o corpo',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'rosca-alternada',
+          name: 'Rosca Alternada',
+          muscleGroup: 'Bíceps',
+          reps: '12-15',
+          sets: 3,
+          description: 'Trabalha cada braço individualmente',
+          tips: 'Alterne os braços, mantenha o cotovelo fixo',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'rosca-martelo',
+          name: 'Rosca Martelo',
+          muscleGroup: 'Bíceps',
+          reps: '10-12',
+          sets: 3,
+          description: 'Trabalha bíceps e antebraço',
+          tips: 'Pegada neutra, movimento controlado',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         }
       ]
@@ -407,67 +465,91 @@ export default function FitApp() {
           description: 'Foca nos isquiotibiais e glúteos',
           tips: 'Mantenha as pernas levemente flexionadas',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'cadeira-extensora',
+          name: 'Cadeira Extensora',
+          muscleGroup: 'Quadríceps',
+          reps: '12-15',
+          sets: 3,
+          description: 'Isolamento do quadríceps',
+          tips: 'Controle a descida, pause no topo',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'mesa-flexora',
+          name: 'Mesa Flexora',
+          muscleGroup: 'Posterior',
+          reps: '12-15',
+          sets: 3,
+          description: 'Isolamento dos isquiotibiais',
+          tips: 'Movimento controlado, contraia no topo',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'panturrilha-em-pe',
+          name: 'Panturrilha em Pé',
+          muscleGroup: 'Panturrilha',
+          reps: '15-20',
+          sets: 4,
+          description: 'Desenvolvimento das panturrilhas',
+          tips: 'Amplitude completa, pause no topo',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         }
       ]
     },
     {
       day: 'quinta',
-      focus: 'Peito e Tríceps',
+      focus: 'Peito, Ombros e Tríceps',
       exercises: [
+        {
+          id: 'supino-inclinado-2',
+          name: 'Supino Inclinado com Halteres',
+          muscleGroup: 'Peito',
+          reps: '8-10',
+          sets: 4,
+          description: 'Variação com halteres para maior amplitude',
+          tips: 'Desça até sentir alongamento no peito',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
         {
           id: 'supino-declinado',
           name: 'Supino Declinado',
           muscleGroup: 'Peito',
-          reps: '8-10',
-          sets: 4,
+          reps: '10-12',
+          sets: 3,
           description: 'Foca na parte inferior do peitoral',
-          tips: 'Controle bem a descida e subida',
+          tips: 'Controle a barra, não bata no peito',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
-          id: 'crucifixo',
-          name: 'Crucifixo',
+          id: 'fly-peck-deck',
+          name: 'Fly Peck Deck',
           muscleGroup: 'Peito',
-          reps: '10-12',
+          reps: '12-15',
           sets: 3,
-          description: 'Isolamento do peitoral',
-          tips: 'Mantenha leve flexão nos cotovelos',
+          description: 'Isolamento do peitoral na máquina',
+          tips: 'Movimento suave, contraia no centro',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
-          id: 'triceps-frances',
-          name: 'Tríceps Francês',
-          muscleGroup: 'Tríceps',
+          id: 'desenvolvimento-arnold',
+          name: 'Desenvolvimento Arnold',
+          muscleGroup: 'Ombros',
           reps: '10-12',
           sets: 3,
-          description: 'Isolamento do tríceps',
-          tips: 'Mantenha os cotovelos fixos',
-          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
-        }
-      ]
-    },
-    {
-      day: 'sexta',
-      focus: 'Costas e Ombros',
-      exercises: [
-        {
-          id: 'barra-fixa',
-          name: 'Barra Fixa',
-          muscleGroup: 'Costas',
-          reps: '6-10',
-          sets: 4,
-          description: 'Exercício composto para costas',
-          tips: 'Se necessário, use auxílio ou elástico',
+          description: 'Variação que trabalha todos os deltoides',
+          tips: 'Rotacione os punhos durante o movimento',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
-          id: 'elevacao-lateral',
-          name: 'Elevação Lateral',
+          id: 'elevacao-posterior',
+          name: 'Elevação Posterior',
           muscleGroup: 'Ombros',
           reps: '12-15',
           sets: 3,
-          description: 'Isolamento do deltoide médio',
-          tips: 'Controle o movimento, não balance',
+          description: 'Isolamento do deltoide posterior',
+          tips: 'Incline o tronco, eleve os braços para trás',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
@@ -476,44 +558,170 @@ export default function FitApp() {
           muscleGroup: 'Trapézio',
           reps: '12-15',
           sets: 3,
-          description: 'Fortalecimento do trapézio',
-          tips: 'Movimento apenas dos ombros',
+          description: 'Desenvolvimento do trapézio',
+          tips: 'Eleve os ombros, pause e desça controlado',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'triceps-frances',
+          name: 'Tríceps Francês',
+          muscleGroup: 'Tríceps',
+          reps: '10-12',
+          sets: 3,
+          description: 'Exercício de isolamento para tríceps',
+          tips: 'Mantenha os cotovelos fixos, desça atrás da cabeça',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'mergulho',
+          name: 'Mergulho',
+          muscleGroup: 'Tríceps',
+          reps: '8-12',
+          sets: 3,
+          description: 'Exercício composto para tríceps',
+          tips: 'Desça até 90 graus, suba com força',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        }
+      ]
+    },
+    {
+      day: 'sexta',
+      focus: 'Costas e Bíceps',
+      exercises: [
+        {
+          id: 'barra-fixa',
+          name: 'Barra Fixa',
+          muscleGroup: 'Costas',
+          reps: '6-10',
+          sets: 4,
+          description: 'Exercício funcional para costas',
+          tips: 'Se necessário, use assistência ou elástico',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'remada-unilateral',
+          name: 'Remada Unilateral',
+          muscleGroup: 'Costas',
+          reps: '10-12',
+          sets: 3,
+          description: 'Trabalha cada lado individualmente',
+          tips: 'Apoie um joelho no banco, puxe até o quadril',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'puxada-triangulo',
+          name: 'Puxada Triângulo',
+          muscleGroup: 'Costas',
+          reps: '10-12',
+          sets: 3,
+          description: 'Variação da puxada com pegada fechada',
+          tips: 'Puxe até o peito, foque nas costas',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'face-pull',
+          name: 'Face Pull',
+          muscleGroup: 'Costas',
+          reps: '15-20',
+          sets: 3,
+          description: 'Exercício para deltoide posterior e trapézio médio',
+          tips: 'Puxe até a face, abra bem os cotovelos',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'rosca-concentrada',
+          name: 'Rosca Concentrada',
+          muscleGroup: 'Bíceps',
+          reps: '10-12',
+          sets: 3,
+          description: 'Isolamento máximo do bíceps',
+          tips: 'Apoie o cotovelo na coxa, movimento lento',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'rosca-scott',
+          name: 'Rosca Scott',
+          muscleGroup: 'Bíceps',
+          reps: '8-10',
+          sets: 3,
+          description: 'Exercício no banco scott',
+          tips: 'Não estenda completamente o braço',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'rosca-cabo',
+          name: 'Rosca no Cabo',
+          muscleGroup: 'Bíceps',
+          reps: '12-15',
+          sets: 3,
+          description: 'Tensão constante no bíceps',
+          tips: 'Mantenha tensão durante todo o movimento',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         }
       ]
     },
     {
       day: 'sabado',
-      focus: 'Pernas e Core',
+      focus: 'Pernas e Glúteos',
       exercises: [
         {
           id: 'agachamento-sumo',
           name: 'Agachamento Sumo',
           muscleGroup: 'Pernas',
-          reps: '12-15',
+          reps: '10-12',
           sets: 4,
-          description: 'Variação que enfatiza glúteos',
+          description: 'Variação que enfatiza glúteos e adutores',
           tips: 'Pés mais afastados, pontas para fora',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
-          id: 'panturrilha',
-          name: 'Panturrilha em Pé',
-          muscleGroup: 'Panturrilha',
-          reps: '15-20',
-          sets: 4,
-          description: 'Fortalecimento das panturrilhas',
-          tips: 'Amplitude completa de movimento',
+          id: 'afundo',
+          name: 'Afundo',
+          muscleGroup: 'Pernas',
+          reps: '12-15',
+          sets: 3,
+          description: 'Exercício unilateral para pernas',
+          tips: 'Desça até 90 graus, alterne as pernas',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         },
         {
-          id: 'prancha',
-          name: 'Prancha',
-          muscleGroup: 'Core',
-          reps: '30-60s',
+          id: 'cadeira-adutora',
+          name: 'Cadeira Adutora',
+          muscleGroup: 'Adutores',
+          reps: '15-20',
           sets: 3,
-          description: 'Fortalecimento do core',
-          tips: 'Mantenha o corpo alinhado',
+          description: 'Isolamento dos adutores',
+          tips: 'Movimento controlado, pause na contração',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'cadeira-abdutora',
+          name: 'Cadeira Abdutora',
+          muscleGroup: 'Abdutores',
+          reps: '15-20',
+          sets: 3,
+          description: 'Isolamento dos abdutores',
+          tips: 'Abra as pernas contra a resistência',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'elevacao-pelvica',
+          name: 'Elevação Pélvica',
+          muscleGroup: 'Glúteos',
+          reps: '15-20',
+          sets: 3,
+          description: 'Isolamento dos glúteos',
+          tips: 'Contraia os glúteos no topo do movimento',
+          animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
+        },
+        {
+          id: 'panturrilha-sentado',
+          name: 'Panturrilha Sentado',
+          muscleGroup: 'Panturrilha',
+          reps: '15-20',
+          sets: 3,
+          description: 'Trabalha o sóleo',
+          tips: 'Amplitude completa, movimento controlado',
           animationUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop'
         }
       ]
@@ -523,68 +731,11 @@ export default function FitApp() {
   // Função para obter repetições baseadas no objetivo
   const getRepsForGoal = (baseReps: string, goal: string): string => {
     if (goal === 'Perder peso') {
-      return baseReps.replace(/(\\d+)-(\\d+)/, (match, min, max) => `${Math.max(10, parseInt(min))}-${Math.min(15, parseInt(max) + 2)}`)
+      return baseReps.replace(/(\d+)-(\d+)/, (match, min, max) => `${Math.max(10, parseInt(min))}-${Math.min(15, parseInt(max) + 2)}`)
     } else if (goal === 'Ganhar massa muscular') {
-      return baseReps.replace(/(\\d+)-(\\d+)/, (match, min, max) => `${Math.max(6, parseInt(min) - 2)}-${Math.max(10, parseInt(max) - 2)}`)
+      return baseReps.replace(/(\d+)-(\d+)/, (match, min, max) => `${Math.max(6, parseInt(min) - 2)}-${Math.max(10, parseInt(max) - 2)}`)
     }
     return baseReps
-  }
-
-  // Função para registrar treino diário
-  const saveDailyWorkout = () => {
-    const today = new Date().toISOString().split('T')[0]
-    const currentWorkout = gymWorkouts.find(w => w.day === selectedDay)
-    
-    if (!currentWorkout) return
-
-    const workoutEntry: DailyWorkoutEntry = {
-      date: today,
-      exercises: {},
-      totalTime: 60, // Tempo estimado
-      caloriesBurned: Math.floor(Math.random() * 200) + 250,
-      notes: ''
-    }
-
-    currentWorkout.exercises.forEach(exercise => {
-      workoutEntry.exercises[exercise.id] = {
-        weight: exerciseWeights[exercise.id] || 0,
-        reps: exerciseReps[exercise.id] || 0,
-        completed: getExerciseLog(exercise.id)?.completed || false
-      }
-    })
-
-    const existingIndex = dailyWorkouts.findIndex(w => w.date === today)
-    if (existingIndex >= 0) {
-      const updatedWorkouts = [...dailyWorkouts]
-      updatedWorkouts[existingIndex] = workoutEntry
-      setDailyWorkouts(updatedWorkouts)
-    } else {
-      setDailyWorkouts([...dailyWorkouts, workoutEntry])
-    }
-
-    // Atualizar progresso do usuário
-    if (currentUser) {
-      updateUserProgress({
-        completedWorkouts: currentUser.completedWorkouts + 1,
-        totalCaloriesBurned: currentUser.totalCaloriesBurned + workoutEntry.caloriesBurned
-      })
-    }
-  }
-
-  // Função para atualizar peso do exercício
-  const updateExerciseWeight = (exerciseId: string, weight: number) => {
-    setExerciseWeights(prev => ({
-      ...prev,
-      [exerciseId]: weight
-    }))
-  }
-
-  // Função para atualizar repetições do exercício
-  const updateExerciseReps = (exerciseId: string, reps: number) => {
-    setExerciseReps(prev => ({
-      ...prev,
-      [exerciseId]: reps
-    }))
   }
 
   // Função para registrar treino
@@ -615,13 +766,7 @@ export default function FitApp() {
       updatedLogs[existingLogIndex].completed = !updatedLogs[existingLogIndex].completed
       setWorkoutLogs(updatedLogs)
     } else {
-      setWorkoutLogs([...workoutLogs, { 
-        exerciseId, 
-        weight: exerciseWeights[exerciseId] || 0, 
-        reps: exerciseReps[exerciseId] || 0, 
-        completed: true, 
-        date: today 
-      }])
+      setWorkoutLogs([...workoutLogs, { exerciseId, weight: 0, reps: 0, completed: true, date: today }])
     }
   }
 
@@ -688,11 +833,115 @@ export default function FitApp() {
         'Sirva tudo junto com um fio de azeite'
       ],
       tags: ['Alto Proteína', 'Carboidrato Complexo', 'Completo']
+    },
+    {
+      id: '3',
+      name: 'Smoothie Verde Detox',
+      category: 'Lanche',
+      calories: 180,
+      protein: 8,
+      prepTime: 5,
+      difficulty: 'Fácil',
+      ingredients: [
+        { name: 'Banana', amount: '1', unit: 'unidade' },
+        { name: 'Espinafre', amount: '1', unit: 'xícara' },
+        { name: 'Abacate', amount: '1/2', unit: 'unidade' },
+        { name: 'Whey protein vanilla', amount: '1', unit: 'colher de sopa' },
+        { name: 'Água de coco', amount: '200', unit: 'ml' },
+        { name: 'Chia', amount: '1', unit: 'colher de chá' },
+        { name: 'Gelo', amount: 'a gosto', unit: '' }
+      ],
+      instructions: [
+        'Adicione todos os ingredientes no liquidificador',
+        'Bata por 1-2 minutos até ficar homogêneo',
+        'Adicione gelo se desejar mais gelado',
+        'Sirva imediatamente'
+      ],
+      tags: ['Detox', 'Antioxidante', 'Hidratante']
+    },
+    {
+      id: '4',
+      name: 'Salmão com Quinoa e Aspargos',
+      category: 'Jantar',
+      calories: 380,
+      protein: 32,
+      prepTime: 20,
+      difficulty: 'Médio',
+      ingredients: [
+        { name: 'Filé de salmão', amount: '120', unit: 'g' },
+        { name: 'Quinoa', amount: '1/2', unit: 'xícara' },
+        { name: 'Aspargos', amount: '150', unit: 'g' },
+        { name: 'Limão', amount: '1', unit: 'unidade' },
+        { name: 'Azeite', amount: '1', unit: 'colher de sopa' },
+        { name: 'Ervas finas', amount: 'a gosto', unit: '' },
+        { name: 'Sal e pimenta', amount: 'a gosto', unit: '' }
+      ],
+      instructions: [
+        'Cozinhe a quinoa conforme instruções da embalagem',
+        'Tempere o salmão com sal, pimenta e limão',
+        'Grelhe o salmão por 4-5 minutos de cada lado',
+        'Refogue os aspargos com azeite por 3 minutos',
+        'Sirva o salmão sobre a quinoa com aspargos',
+        'Finalize com ervas finas e limão'
+      ],
+      tags: ['Ômega 3', 'Superalimento', 'Anti-inflamatório']
+    },
+    {
+      id: '5',
+      name: 'Pudim de Chia com Frutas Vermelhas',
+      category: 'Sobremesa',
+      calories: 220,
+      protein: 12,
+      prepTime: 5,
+      difficulty: 'Fácil',
+      ingredients: [
+        { name: 'Chia', amount: '3', unit: 'colheres de sopa' },
+        { name: 'Leite de amêndoas', amount: '200', unit: 'ml' },
+        { name: 'Mel', amount: '1', unit: 'colher de sopa' },
+        { name: 'Frutas vermelhas', amount: '1/2', unit: 'xícara' },
+        { name: 'Whey protein', amount: '1', unit: 'colher de sopa' },
+        { name: 'Canela em pó', amount: 'a gosto', unit: '' }
+      ],
+      instructions: [
+        'Misture chia, leite de amêndoas, mel e whey',
+        'Mexa bem para não formar grumos',
+        'Deixe na geladeira por pelo menos 2 horas',
+        'Sirva com frutas vermelhas por cima',
+        'Polvilhe canela antes de servir'
+      ],
+      tags: ['Sobremesa Saudável', 'Rico em Fibras', 'Antioxidante']
+    },
+    {
+      id: '6',
+      name: 'Wrap de Frango com Abacate',
+      category: 'Lanche',
+      calories: 320,
+      protein: 28,
+      prepTime: 15,
+      difficulty: 'Fácil',
+      ingredients: [
+        { name: 'Tortilla integral', amount: '1', unit: 'unidade' },
+        { name: 'Frango desfiado', amount: '100', unit: 'g' },
+        { name: 'Abacate', amount: '1/2', unit: 'unidade' },
+        { name: 'Folhas de alface', amount: '2', unit: 'unidades' },
+        { name: 'Tomate pequeno', amount: '1', unit: 'unidade' },
+        { name: 'Iogurte grego', amount: '1', unit: 'colher de sopa' },
+        { name: 'Temperos', amount: 'a gosto', unit: '' }
+      ],
+      instructions: [
+        'Amasse o abacate com um garfo',
+        'Tempere o frango com especiarias',
+        'Espalhe o abacate na tortilla',
+        'Adicione alface, tomate e frango',
+        'Coloque uma colherada de iogurte grego',
+        'Enrole bem apertado e corte ao meio'
+      ],
+      tags: ['Prático', 'Gordura Boa', 'Portátil']
     }
   ]
 
   // Planos de dieta personalizados
-  const generateDietPlan = (goal: 'emagrecimento' | 'ganho_massa', user: any): DietPlan => {
+  const generateDietPlan = (goal: 'emagrecimento' | 'ganho_massa', user: User): DietPlan => {
     const baseCalories = goal === 'emagrecimento' ? 1400 : 2200
     const proteinRatio = goal === 'emagrecimento' ? 0.3 : 0.25
     const carbRatio = goal === 'emagrecimento' ? 0.35 : 0.45
@@ -892,13 +1141,52 @@ export default function FitApp() {
       focus: 'Explosão',
       difficulty: 'Médio',
       estimatedTime: '20 min'
+    },
+    {
+      day: 7,
+      exercises: [
+        { name: 'Flexões archer', reps: '2x5 cada lado', description: 'Flexões unilaterais' },
+        { name: 'Pistol squats assistidos', reps: '2x3 each perna', description: 'Agachamento unilateral assistido' },
+        { name: 'Prancha com toque no ombro', reps: '3x10', description: 'Prancha tocando ombros alternados' },
+        { name: 'Burpees com flexão', reps: '3x8', description: 'Burpees com flexão extra' }
+      ],
+      focus: 'Coordenação',
+      difficulty: 'Médio',
+      estimatedTime: '25 min'
+    },
+    {
+      day: 15,
+      exercises: [
+        { name: 'Flexões uma mão assistida', reps: '2x3 cada mão', description: 'Flexões unilaterais com apoio' },
+        { name: 'Pistol squats', reps: '2x5 cada perna', description: 'Agachamento unilateral completo' },
+        { name: 'Prancha com perna elevada', duration: '60s', reps: '3x', description: 'Prancha com alternância de pernas' },
+        { name: 'Muscle-up assistido', reps: '3x3', description: 'Muscle-up com banda elástica' }
+      ],
+      focus: 'Força Avançada',
+      difficulty: 'Difícil',
+      estimatedTime: '30 min'
+    },
+    {
+      day: 30,
+      exercises: [
+        { name: 'Flexões uma mão', reps: '1x3 cada mão', description: 'Flexões unilaterais completas' },
+        { name: 'Pistol squats com salto', reps: '3x5 cada perna', description: 'Agachamento unilateral explosivo' },
+        { name: 'Prancha humana', duration: '90s', reps: '2x', description: 'Prancha avançada' },
+        { name: 'Muscle-up', reps: '2x2', description: 'Muscle-up completo' },
+        { name: 'Handstand push-up', reps: '1x3', description: 'Flexão em parada de mão' }
+      ],
+      focus: 'Maestria',
+      difficulty: 'Difícil',
+      estimatedTime: '35 min'
     }
   ]
 
   // Função para obter o treino do dia
   const getDayWorkout = (day: number): ChallengeDay => {
     if (day <= 3) return calisthenicChallenge[day - 1]
-    return calisthenicChallenge[2] // Fallback para o último treino disponível
+    if (day <= 7) return calisthenicChallenge[3]
+    if (day <= 15) return calisthenicChallenge[4]
+    return calisthenicChallenge[5]
   }
 
   const questions = [
@@ -1037,29 +1325,91 @@ export default function FitApp() {
     }
   ]
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    const success = await login(loginData.email, loginData.password)
-    if (success) {
-      setCurrentStep('dashboard')
-    } else {
-      alert('Email ou senha incorretos!')
+    // Simular login
+    const mockUser: User = {
+      id: '1',
+      name: 'João Silva',
+      email: loginData.email,
+      height: '1.75',
+      weight: '80',
+      age: '28',
+      gender: 'Masculino',
+      goal: 'Perder peso',
+      currentActivity: '3-4x por semana',
+      trainingLevel: 'Intermediário',
+      sleepHours: '7-8h',
+      workType: 'Sedentário (escritório)',
+      stressLevel: 'Moderado',
+      waterIntake: '2-3L',
+      mealFrequency: '4-5 refeições',
+      dietRestrictions: '',
+      supplementUse: 'Whey protein',
+      motivation: 'Melhorar saúde e autoestima',
+      medicalHistory: '',
+      chronicDiseases: '',
+      medications: '',
+      injuries: '',
+      isPro: false,
+      createdAt: new Date(),
+      currentWeight: '78.5',
+      targetWeight: '75',
+      weeklyWeightLoss: 1.2,
+      completedWorkouts: 15,
+      totalCaloriesBurned: 2340,
+      streakDays: 7
     }
+    
+    setCurrentUser(mockUser)
+    setIsAuthenticated(true)
+    setCurrentStep('dashboard')
   }
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault()
     if (registerData.password !== registerData.confirmPassword) {
       alert('Senhas não coincidem!')
       return
     }
     
-    const success = await register(registerData.name, registerData.email, registerData.password)
-    if (success) {
-      setCurrentStep('questionnaire')
-    } else {
-      alert('Email já cadastrado!')
+    // Simular registro
+    const newUser: User = {
+      id: Date.now().toString(),
+      name: registerData.name,
+      email: registerData.email,
+      height: '',
+      weight: '',
+      age: '',
+      gender: '',
+      goal: '',
+      currentActivity: '',
+      trainingLevel: '',
+      sleepHours: '',
+      workType: '',
+      stressLevel: '',
+      waterIntake: '',
+      mealFrequency: '',
+      dietRestrictions: '',
+      supplementUse: '',
+      motivation: '',
+      medicalHistory: '',
+      chronicDiseases: '',
+      medications: '',
+      injuries: '',
+      isPro: false,
+      createdAt: new Date(),
+      currentWeight: '',
+      targetWeight: '',
+      weeklyWeightLoss: 0,
+      completedWorkouts: 0,
+      totalCaloriesBurned: 0,
+      streakDays: 0
     }
+    
+    setCurrentUser(newUser)
+    setIsAuthenticated(true)
+    setCurrentStep('questionnaire')
   }
 
   const handleAnswerChange = (value: string) => {
@@ -1143,11 +1493,12 @@ export default function FitApp() {
 
     // Atualizar dados do usuário
     if (currentUser) {
-      const updatedUserData = {
+      const updatedUser = {
+        ...currentUser,
         ...answers,
         targetWeight: answers.goal === 'Perder peso' ? (parseFloat(answers.weight) - 5).toString() : (parseFloat(answers.weight) + 3).toString()
       }
-      updateUser(updatedUserData)
+      setCurrentUser(updatedUser)
     }
 
     setAssessment({
@@ -1163,17 +1514,17 @@ export default function FitApp() {
   const handlePurchase = (plan: string) => {
     setSelectedPlan(plan)
     if (currentUser) {
-      updateUser({ isPro: true, selectedPlan: plan })
+      setCurrentUser({ ...currentUser, isPro: true })
     }
-    // Redirecionar para a página PRO após compra
-    window.location.href = '/pro-version'
+    setCurrentStep('purchased')
   }
 
   const completeDay = (day: number) => {
     if (!completedDays.includes(day)) {
       setCompletedDays([...completedDays, day])
       if (currentUser) {
-        updateUserProgress({
+        setCurrentUser({
+          ...currentUser,
           completedWorkouts: currentUser.completedWorkouts + 1,
           totalCaloriesBurned: currentUser.totalCaloriesBurned + Math.floor(Math.random() * 200) + 150
         })
@@ -1192,21 +1543,6 @@ export default function FitApp() {
   const currentQuestion = questions[questionIndex]
   const progress = ((questionIndex + 1) / questions.length) * 100
 
-  // Seletor de Idioma
-  const LanguageSelector = () => (
-    <Select value={language} onValueChange={(value: Language) => setLanguage(value)}>
-      <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white">
-        <Globe className="w-4 h-4 mr-2" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent className="bg-slate-800 border-slate-700">
-        <SelectItem value="pt">🇧🇷 Português</SelectItem>
-        <SelectItem value="en">🇺🇸 English</SelectItem>
-        <SelectItem value="es">🇪🇸 Español</SelectItem>
-      </SelectContent>
-    </Select>
-  )
-
   // Navigation Component
   const Navigation = ({ showBackButton = false }: { showBackButton?: boolean }) => (
     <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
@@ -1217,7 +1553,7 @@ export default function FitApp() {
               <Target className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              {t('home.title')}
+              FitLife Pro
             </h1>
             {currentUser?.isPro && (
               <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
@@ -1228,36 +1564,12 @@ export default function FitApp() {
           </div>
           
           <div className="flex items-center gap-4">
-            <LanguageSelector />
             {isAuthenticated && currentUser && (
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-gray-700 font-medium">{currentUser.name}</span>
-                <Button
-                  onClick={() => setCurrentStep('account')}
-                  variant="ghost"
-                  className="text-gray-600 hover:text-gray-800"
-                >
-                  <UserCog className="w-4 h-4" />
-                </Button>
-                {currentUser.isAdmin && (
-                  <Button
-                    onClick={() => setCurrentStep('admin')}
-                    variant="ghost"
-                    className="text-purple-600 hover:text-purple-800"
-                  >
-                    <Shield className="w-4 h-4" />
-                  </Button>
-                )}
-                <Button
-                  onClick={logout}
-                  variant="ghost"
-                  className="text-red-600 hover:text-red-800"
-                >
-                  Sair
-                </Button>
               </div>
             )}
             {showBackButton && (
@@ -1267,7 +1579,7 @@ export default function FitApp() {
                 className="text-gray-600 hover:text-gray-800"
               >
                 <Home className="w-4 h-4 mr-2" />
-                {isAuthenticated ? t('nav.dashboard') : t('nav.home')}
+                {isAuthenticated ? 'Dashboard' : 'Início'}
               </Button>
             )}
           </div>
@@ -1281,7 +1593,7 @@ export default function FitApp() {
               className="flex items-center gap-2 whitespace-nowrap"
             >
               <BarChart3 className="w-4 h-4" />
-              {t('nav.dashboard')}
+              Dashboard
             </Button>
             <Button
               variant={currentStep === 'diet' ? 'default' : 'ghost'}
@@ -1289,7 +1601,7 @@ export default function FitApp() {
               className="flex items-center gap-2 whitespace-nowrap"
             >
               <Utensils className="w-4 h-4" />
-              {t('nav.diet')}
+              Dieta
             </Button>
             <Button
               variant={currentStep === 'workout' ? 'default' : 'ghost'}
@@ -1297,7 +1609,7 @@ export default function FitApp() {
               className="flex items-center gap-2 whitespace-nowrap"
             >
               <Dumbbell className="w-4 h-4" />
-              {t('nav.workouts')}
+              Treinos
             </Button>
             {currentUser?.isPro && (
               <>
@@ -1307,7 +1619,7 @@ export default function FitApp() {
                   className="flex items-center gap-2 whitespace-nowrap bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600"
                 >
                   <Flame className="w-4 h-4" />
-                  {t('nav.challenge')}
+                  Desafio 30 Dias
                 </Button>
                 <Button
                   variant={currentStep === 'recipes' ? 'default' : 'ghost'}
@@ -1315,7 +1627,7 @@ export default function FitApp() {
                   className="flex items-center gap-2 whitespace-nowrap"
                 >
                   <ChefHat className="w-4 h-4" />
-                  {t('nav.recipes')}
+                  Receitas Fit
                 </Button>
               </>
             )}
@@ -1325,7 +1637,7 @@ export default function FitApp() {
               className="flex items-center gap-2 whitespace-nowrap"
             >
               <ShoppingCart className="w-4 h-4" />
-              {t('nav.products')}
+              Produtos
             </Button>
             <Button
               variant={currentStep === 'progress' ? 'default' : 'ghost'}
@@ -1333,24 +1645,13 @@ export default function FitApp() {
               className="flex items-center gap-2 whitespace-nowrap"
             >
               <TrendingUp className="w-4 h-4" />
-              {t('nav.progress')}
+              Progresso
             </Button>
           </div>
         )}
       </div>
     </div>
   )
-
-  // Redirecionar para páginas específicas
-  if (currentStep === 'account') {
-    window.location.href = '/account'
-    return null
-  }
-
-  if (currentStep === 'admin' && currentUser?.isAdmin) {
-    window.location.href = '/admin'
-    return null
-  }
 
   if (currentStep === 'home') {
     return (
@@ -1363,11 +1664,6 @@ export default function FitApp() {
         </div>
 
         <div className="relative z-10 container mx-auto px-4 py-16">
-          {/* Language Selector */}
-          <div className="absolute top-4 right-4">
-            <LanguageSelector />
-          </div>
-
           {/* Header */}
           <div className="text-center mb-20">
             <div className="flex items-center justify-center mb-8">
@@ -1376,23 +1672,26 @@ export default function FitApp() {
               </div>
             </div>
             <h1 className="text-6xl md:text-8xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent mb-6 leading-tight">
-              {t('home.title')}
+              FitLife Pro
             </h1>
             <p className="text-2xl md:text-3xl text-gray-300 max-w-4xl mx-auto mb-8 leading-relaxed">
-              {t('home.subtitle')}
+              Transforme seu corpo e sua vida com nosso programa personalizado de 
+              <span className="text-emerald-400 font-semibold"> emagrecimento</span>,
+              <span className="text-teal-400 font-semibold"> dieta</span> e
+              <span className="text-cyan-400 font-semibold"> treino</span>
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-12">
               <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-4 py-2 text-lg">
                 <Users className="w-4 h-4 mr-2" />
-                {t('home.stats.users')}
+                +50.000 usuários
               </Badge>
               <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 px-4 py-2 text-lg">
                 <Award className="w-4 h-4 mr-2" />
-                {t('home.stats.success')}
+                95% de sucesso
               </Badge>
               <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 px-4 py-2 text-lg">
                 <Zap className="w-4 h-4 mr-2" />
-                {t('home.stats.results')}
+                Resultados em 30 dias
               </Badge>
             </div>
           </div>
@@ -1404,19 +1703,25 @@ export default function FitApp() {
                 <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-4 rounded-2xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Utensils className="w-8 h-8 text-white" />
                 </div>
-                <CardTitle className="text-2xl text-white mb-2">{t('home.features.diet.title')}</CardTitle>
+                <CardTitle className="text-2xl text-white mb-2">Dieta Inteligente</CardTitle>
                 <CardDescription className="text-gray-300 text-lg">
-                  {t('home.features.diet.description')}
+                  IA personaliza seu cardápio baseado em seus objetivos e preferências
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
-                  {(t('home.features.diet.benefits') as string[]).map((benefit, index) => (
-                    <div key={index} className="flex items-center gap-3 text-gray-300">
-                      <CheckCircle className="w-4 h-4 text-emerald-400" />
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <span>Cardápio semanal automático</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <span>Lista de compras inteligente</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <span>Ajustes em tempo real</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1426,19 +1731,25 @@ export default function FitApp() {
                 <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-4 rounded-2xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Dumbbell className="w-8 h-8 text-white" />
                 </div>
-                <CardTitle className="text-2xl text-white mb-2">{t('home.features.workouts.title')}</CardTitle>
+                <CardTitle className="text-2xl text-white mb-2">Treinos Adaptativos</CardTitle>
                 <CardDescription className="text-gray-300 text-lg">
-                  {t('home.features.workouts.description')}
+                  Exercícios que evoluem com você, com vídeos HD e acompanhamento
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
-                  {(t('home.features.workouts.benefits') as string[]).map((benefit, index) => (
-                    <div key={index} className="flex items-center gap-3 text-gray-300">
-                      <CheckCircle className="w-4 h-4 text-teal-400" />
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-teal-400" />
+                    <span>Vídeos em 4K com instruções</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-teal-400" />
+                    <span>Progressão automática</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-teal-400" />
+                    <span>Registro de performance</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1448,19 +1759,25 @@ export default function FitApp() {
                 <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 p-4 rounded-2xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
-                <CardTitle className="text-2xl text-white mb-2">{t('home.features.analysis.title')}</CardTitle>
+                <CardTitle className="text-2xl text-white mb-2">Análise Avançada</CardTitle>
                 <CardDescription className="text-gray-300 text-lg">
-                  {t('home.features.analysis.description')}
+                  Métricas detalhadas e insights para acelerar seus resultados
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
-                  {(t('home.features.analysis.benefits') as string[]).map((benefit, index) => (
-                    <div key={index} className="flex items-center gap-3 text-gray-300">
-                      <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-cyan-400" />
+                    <span>Dashboard em tempo real</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-cyan-400" />
+                    <span>Relatórios semanais</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-cyan-400" />
+                    <span>Previsão de resultados</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1470,10 +1787,10 @@ export default function FitApp() {
           <div className="text-center">
             <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/10">
               <h2 className="text-4xl font-bold text-white mb-6">
-                {t('home.cta.title')}
+                Comece Sua Transformação Hoje
               </h2>
               <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                {t('home.cta.description')}
+                Crie sua conta e descubra seu potencial com nossa avaliação completa
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
@@ -1481,14 +1798,14 @@ export default function FitApp() {
                   className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white px-12 py-6 text-xl rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 font-semibold"
                 >
                   <UserPlus className="w-6 h-6 mr-3" />
-                  {t('home.cta.createAccount')}
+                  Criar Conta Gratuita
                 </Button>
                 <Button 
                   onClick={() => setCurrentStep('login')}
                   className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-white px-12 py-6 text-xl rounded-2xl shadow-2xl hover:shadow-teal-500/25 transition-all duration-300 transform hover:scale-105 font-semibold"
                 >
                   <LogIn className="w-6 h-6 mr-3" />
-                  {t('home.cta.login')}
+                  Já tenho conta
                 </Button>
               </div>
               <div className="flex justify-center items-center gap-8 mt-8 text-gray-400">
@@ -1515,9 +1832,6 @@ export default function FitApp() {
   if (currentStep === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900 flex items-center justify-center py-8">
-        <div className="absolute top-4 right-4">
-          <LanguageSelector />
-        </div>
         <div className="container mx-auto px-4 max-w-md">
           <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
             <CardHeader className="text-center pb-6">
@@ -1525,16 +1839,16 @@ export default function FitApp() {
                 <LogIn className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-3xl text-white font-bold">
-                {t('auth.login.title')}
+                Entrar na sua conta
               </CardTitle>
               <CardDescription className="text-gray-300 text-lg">
-                {t('auth.login.subtitle')}
+                Acesse seu dashboard personalizado
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">{t('auth.login.email')}</Label>
+                  <Label htmlFor="email" className="text-white">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -1549,7 +1863,7 @@ export default function FitApp() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white">{t('auth.login.password')}</Label>
+                  <Label htmlFor="password" className="text-white">Senha</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -1576,18 +1890,18 @@ export default function FitApp() {
                   type="submit"
                   className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 text-lg font-semibold"
                 >
-                  {t('auth.login.loginButton')}
+                  Entrar
                 </Button>
               </form>
               <div className="text-center mt-6">
                 <p className="text-gray-300">
-                  {t('auth.login.noAccount')}{' '}
+                  Não tem uma conta?{' '}
                   <Button
                     variant="link"
                     onClick={() => setCurrentStep('register')}
                     className="text-emerald-400 hover:text-emerald-300 p-0"
                   >
-                    {t('auth.login.createAccount')}
+                    Criar conta
                   </Button>
                 </p>
                 <Button
@@ -1595,7 +1909,7 @@ export default function FitApp() {
                   onClick={() => setCurrentStep('home')}
                   className="text-gray-400 hover:text-gray-300 mt-2"
                 >
-                  {t('auth.login.backToHome')}
+                  Voltar ao início
                 </Button>
               </div>
             </CardContent>
@@ -1608,9 +1922,6 @@ export default function FitApp() {
   if (currentStep === 'register') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900 flex items-center justify-center py-8">
-        <div className="absolute top-4 right-4">
-          <LanguageSelector />
-        </div>
         <div className="container mx-auto px-4 max-w-md">
           <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
             <CardHeader className="text-center pb-6">
@@ -1618,16 +1929,16 @@ export default function FitApp() {
                 <UserPlus className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-3xl text-white font-bold">
-                {t('auth.register.title')}
+                Criar sua conta
               </CardTitle>
               <CardDescription className="text-gray-300 text-lg">
-                {t('auth.register.subtitle')}
+                Comece sua jornada de transformação
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleRegister} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-white">{t('auth.register.name')}</Label>
+                  <Label htmlFor="name" className="text-white">Nome completo</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -1642,7 +1953,7 @@ export default function FitApp() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">{t('auth.register.email')}</Label>
+                  <Label htmlFor="email" className="text-white">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -1657,7 +1968,7 @@ export default function FitApp() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white">{t('auth.register.password')}</Label>
+                  <Label htmlFor="password" className="text-white">Senha</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -1681,7 +1992,7 @@ export default function FitApp() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-white">{t('auth.register.confirmPassword')}</Label>
+                  <Label htmlFor="confirmPassword" className="text-white">Confirmar senha</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -1699,18 +2010,18 @@ export default function FitApp() {
                   type="submit"
                   className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 text-lg font-semibold"
                 >
-                  {t('auth.register.registerButton')}
+                  Criar Conta
                 </Button>
               </form>
               <div className="text-center mt-6">
                 <p className="text-gray-300">
-                  {t('auth.register.hasAccount')}{' '}
+                  Já tem uma conta?{' '}
                   <Button
                     variant="link"
                     onClick={() => setCurrentStep('login')}
                     className="text-emerald-400 hover:text-emerald-300 p-0"
                   >
-                    {t('auth.register.login')}
+                    Fazer login
                   </Button>
                 </p>
                 <Button
@@ -1718,7 +2029,7 @@ export default function FitApp() {
                   onClick={() => setCurrentStep('home')}
                   className="text-gray-400 hover:text-gray-300 mt-2"
                 >
-                  {t('auth.register.backToHome')}
+                  Voltar ao início
                 </Button>
               </div>
             </CardContent>
@@ -1809,14 +2120,14 @@ export default function FitApp() {
                   className="px-8 py-3 border-white/20 text-white hover:bg-white/10 disabled:opacity-50"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t('common.previous')}
+                  Anterior
                 </Button>
                 <Button
                   onClick={nextQuestion}
                   disabled={!answers[currentQuestion.id as keyof QuestionnaireData]}
                   className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 px-8 py-3 font-semibold disabled:opacity-50"
                 >
-                  {questionIndex === questions.length - 1 ? 'Finalizar' : t('common.next')}
+                  {questionIndex === questions.length - 1 ? 'Finalizar' : 'Próxima'}
                   {questionIndex !== questions.length - 1 && <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />}
                 </Button>
               </div>
@@ -1918,7 +2229,7 @@ export default function FitApp() {
               {/* Opção de continuar com versão gratuita */}
               <div className="pt-6 border-t border-white/20">
                 <Button
-                  onClick={() => setCurrentStep('dashboard')}
+                  onClick={() => setCurrentStep('free')}
                   variant="ghost"
                   className="text-white/80 hover:text-white hover:bg-white/10 underline text-lg"
                 >
@@ -1939,10 +2250,10 @@ export default function FitApp() {
         <div className="container mx-auto px-4 max-w-6xl pt-24 pb-8">
           <div className="text-center mb-12">
             <h1 className="text-5xl font-bold text-white mb-6">
-              {t('dashboard.welcome', { name: currentUser.name })}
+              Olá, {currentUser.name}! 👋
             </h1>
             <p className="text-xl text-gray-300">
-              {t('dashboard.subtitle')}
+              Aqui está seu progresso personalizado e dados atualizados
             </p>
           </div>
 
@@ -1953,7 +2264,7 @@ export default function FitApp() {
                 <div className="text-3xl font-bold text-emerald-400 mb-2">
                   {currentUser.streakDays}
                 </div>
-                <div className="text-gray-300">{t('dashboard.stats.consecutiveDays')}</div>
+                <div className="text-gray-300">Dias consecutivos</div>
                 <div className="text-sm text-emerald-300 mt-1">
                   🔥 Em chamas!
                 </div>
@@ -1964,9 +2275,9 @@ export default function FitApp() {
                 <div className="text-3xl font-bold text-teal-400 mb-2">
                   {currentUser.weeklyWeightLoss.toFixed(1)}kg
                 </div>
-                <div className="text-gray-300">{t('dashboard.stats.weightLost')}</div>
+                <div className="text-gray-300">Peso perdido</div>
                 <div className="text-sm text-teal-300 mt-1">
-                  {t('dashboard.stats.thisWeek')}
+                  Esta semana
                 </div>
               </CardContent>
             </Card>
@@ -1975,20 +2286,20 @@ export default function FitApp() {
                 <div className="text-3xl font-bold text-cyan-400 mb-2">
                   {currentUser.completedWorkouts}
                 </div>
-                <div className="text-gray-300">{t('dashboard.stats.workoutsCompleted')}</div>
+                <div className="text-gray-300">Treinos feitos</div>
                 <div className="text-sm text-cyan-300 mt-1">
-                  {t('dashboard.stats.total')}
+                  Total
                 </div>
               </CardContent>
             </Card>
             <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
               <CardContent className="p-6 text-center">
                 <div className="text-3xl font-bold text-purple-400 mb-2">
-                  {currentUser.totalCaloriesBurned}
+                  {currentUser.totalCaloriesBurned.toLocaleString()}
                 </div>
-                <div className="text-gray-300">{t('dashboard.stats.caloriesBurned')}</div>
+                <div className="text-gray-300">Calorias queimadas</div>
                 <div className="text-sm text-purple-300 mt-1">
-                  {t('dashboard.stats.total')}
+                  Total
                 </div>
               </CardContent>
             </Card>
@@ -2000,25 +2311,25 @@ export default function FitApp() {
               <CardHeader>
                 <CardTitle className="text-emerald-400 text-2xl flex items-center gap-2">
                   <Scale className="w-6 h-6" />
-                  {t('dashboard.progress.title')}
+                  Progresso de Peso
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">{t('dashboard.progress.initialWeight')}:</span>
+                  <span className="text-gray-300">Peso inicial:</span>
                   <span className="text-white font-bold">{currentUser.weight}kg</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">{t('dashboard.progress.currentWeight')}:</span>
+                  <span className="text-gray-300">Peso atual:</span>
                   <span className="text-emerald-400 font-bold">{currentUser.currentWeight}kg</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">{t('dashboard.progress.goal')}:</span>
+                  <span className="text-gray-300">Meta:</span>
                   <span className="text-teal-400 font-bold">{currentUser.targetWeight}kg</span>
                 </div>
                 <div className="mt-4">
                   <div className="flex justify-between text-sm text-gray-300 mb-2">
-                    <span>{t('dashboard.progress.progress')}</span>
+                    <span>Progresso</span>
                     <span>
                       {Math.round(((parseFloat(currentUser.weight) - parseFloat(currentUser.currentWeight)) / 
                         (parseFloat(currentUser.weight) - parseFloat(currentUser.targetWeight))) * 100)}%
@@ -2037,20 +2348,20 @@ export default function FitApp() {
               <CardHeader>
                 <CardTitle className="text-teal-400 text-2xl flex items-center gap-2">
                   <Target className="w-6 h-6" />
-                  {t('dashboard.profile.title')}
+                  Seu Perfil
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {assessment && (
                   <>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-300">{t('dashboard.profile.bmi')}:</span>
+                      <span className="text-gray-300">IMC:</span>
                       <Badge variant={assessment.bmi > 25 ? "destructive" : "default"}>
                         {assessment.bmi.toFixed(1)} - {assessment.bmiCategory}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-300">{t('dashboard.profile.level')}:</span>
+                      <span className="text-gray-300">Nível:</span>
                       <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600">
                         {assessment.level}
                       </Badge>
@@ -2058,11 +2369,11 @@ export default function FitApp() {
                   </>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">{t('dashboard.profile.objective')}:</span>
+                  <span className="text-gray-300">Objetivo:</span>
                   <span className="text-emerald-400 font-semibold">{currentUser.goal}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">{t('dashboard.profile.activity')}:</span>
+                  <span className="text-gray-300">Atividade:</span>
                   <span className="text-teal-400 font-semibold">{currentUser.currentActivity}</span>
                 </div>
               </CardContent>
@@ -2072,7 +2383,7 @@ export default function FitApp() {
           {/* Próximas Ações */}
           <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl mb-8">
             <CardHeader>
-              <CardTitle className="text-cyan-400 text-2xl">{t('dashboard.nextActions.title')}</CardTitle>
+              <CardTitle className="text-cyan-400 text-2xl">Próximas Ações Recomendadas</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-4">
@@ -2081,16 +2392,16 @@ export default function FitApp() {
                   className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 p-6 h-auto flex flex-col gap-3"
                 >
                   <Utensils className="w-8 h-8" />
-                  <span className="font-semibold">{t('dashboard.nextActions.configureDiet')}</span>
-                  <span className="text-sm opacity-80">{t('dashboard.nextActions.configureDietDesc')}</span>
+                  <span className="font-semibold">Configurar Dieta</span>
+                  <span className="text-sm opacity-80">Personalize seu plano alimentar</span>
                 </Button>
                 <Button
                   onClick={() => setCurrentStep('workout')}
                   className="bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 p-6 h-auto flex flex-col gap-3"
                 >
                   <Dumbbell className="w-8 h-8" />
-                  <span className="font-semibold">{t('dashboard.nextActions.trainToday')}</span>
-                  <span className="text-sm opacity-80">{t('dashboard.nextActions.trainTodayDesc')}</span>
+                  <span className="font-semibold">Treinar Hoje</span>
+                  <span className="text-sm opacity-80">Seu treino está esperando</span>
                 </Button>
                 {currentUser.isPro ? (
                   <Button
@@ -2098,8 +2409,8 @@ export default function FitApp() {
                     className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/30 p-6 h-auto flex flex-col gap-3"
                   >
                     <Flame className="w-8 h-8" />
-                    <span className="font-semibold">{t('dashboard.nextActions.challenge30')}</span>
-                    <span className="text-sm opacity-80">{t('dashboard.nextActions.challenge30Desc')}</span>
+                    <span className="font-semibold">Desafio 30 Dias</span>
+                    <span className="text-sm opacity-80">Continue o desafio</span>
                   </Button>
                 ) : (
                   <Button
@@ -2107,8 +2418,8 @@ export default function FitApp() {
                     className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 p-6 h-auto flex flex-col gap-3"
                   >
                     <Crown className="w-8 h-8" />
-                    <span className="font-semibold">{t('dashboard.nextActions.upgradePro')}</span>
-                    <span className="text-sm opacity-80">{t('dashboard.nextActions.upgradeProDesc')}</span>
+                    <span className="font-semibold">Upgrade PRO</span>
+                    <span className="text-sm opacity-80">Desbloqueie tudo</span>
                   </Button>
                 )}
               </div>
@@ -2139,181 +2450,1312 @@ export default function FitApp() {
     )
   }
 
-  if (currentStep === 'diet' && currentUser) {
+  if (currentStep === 'diet') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900">
+        <Navigation showBackButton />
+        <div className="container mx-auto px-4 max-w-6xl pt-24 pb-8">
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-white mb-6">Dieta Personalizada</h1>
+            <p className="text-xl text-gray-300">
+              {currentUser?.isPro ? 'Configure sua dieta baseada no seu objetivo' : 'Dicas e orientações para uma alimentação saudável'}
+            </p>
+          </div>
+
+          {currentUser?.isPro ? (
+            <>
+              {!dietGoal ? (
+                <div className="grid md:grid-cols-2 gap-8 mb-8">
+                  <Card 
+                    className="border-2 border-red-500/50 bg-red-500/10 backdrop-blur-xl shadow-2xl cursor-pointer hover:scale-105 transition-all duration-300"
+                    onClick={() => handleDietGoalSelect('emagrecimento')}
+                  >
+                    <CardHeader className="text-center">
+                      <div className="bg-gradient-to-r from-red-500 to-pink-600 p-4 rounded-2xl w-fit mx-auto mb-6">
+                        <TrendingDown className="w-12 h-12 text-white" />
+                      </div>
+                      <CardTitle className="text-3xl text-white mb-4">Emagrecimento</CardTitle>
+                      <CardDescription className="text-gray-300 text-lg">
+                        Plano focado na perda de peso saudável e sustentável
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-red-400" />
+                          <span>Déficit calórico controlado</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-red-400" />
+                          <span>Alta proteína para preservar músculos</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-red-400" />
+                          <span>Carboidratos estratégicos</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-red-400" />
+                          <span>Gorduras saudáveis</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card 
+                    className="border-2 border-blue-500/50 bg-blue-500/10 backdrop-blur-xl shadow-2xl cursor-pointer hover:scale-105 transition-all duration-300"
+                    onClick={() => handleDietGoalSelect('ganho_massa')}
+                  >
+                    <CardHeader className="text-center">
+                      <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-2xl w-fit mx-auto mb-6">
+                        <Beef className="w-12 h-12 text-white" />
+                      </div>
+                      <CardTitle className="text-3xl text-white mb-4">Ganho de Massa</CardTitle>
+                      <CardDescription className="text-gray-300 text-lg">
+                        Plano para ganhar massa muscular magra de forma eficiente
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-blue-400" />
+                          <span>Superávit calórico calculado</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-blue-400" />
+                          <span>Proteína otimizada para crescimento</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-blue-400" />
+                          <span>Carboidratos para energia</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                          <CheckCircle className="w-4 h-4 text-blue-400" />
+                          <span>Timing nutricional</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                currentDietPlan && (
+                  <div className="space-y-8">
+                    {/* Resumo Nutricional */}
+                    <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                      <CardHeader>
+                        <CardTitle className="text-emerald-400 text-2xl flex items-center gap-2">
+                          <Target className="w-6 h-6" />
+                          Plano para {dietGoal === 'emagrecimento' ? 'Emagrecimento' : 'Ganho de Massa'}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid md:grid-cols-4 gap-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-emerald-400">{currentDietPlan.totalCalories}</div>
+                            <div className="text-gray-300">Calorias</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-teal-400">{currentDietPlan.totalProtein}g</div>
+                            <div className="text-gray-300">Proteína</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-cyan-400">{currentDietPlan.totalCarbs}g</div>
+                            <div className="text-gray-300">Carboidratos</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-400">{currentDietPlan.totalFat}g</div>
+                            <div className="text-gray-300">Gorduras</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Refeições */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {[
+                        { meal: currentDietPlan.breakfast, icon: Coffee, color: 'orange', time: 'Café da Manhã' },
+                        { meal: currentDietPlan.snack1, icon: Apple, color: 'green', time: 'Lanche da Manhã' },
+                        { meal: currentDietPlan.lunch, icon: Utensils, color: 'blue', time: 'Almoço' },
+                        { meal: currentDietPlan.snack2, icon: Grape, color: 'purple', time: 'Lanche da Tarde' },
+                        { meal: currentDietPlan.dinner, icon: Fish, color: 'teal', time: 'Jantar' }
+                      ].map(({ meal, icon: Icon, color, time }, index) => (
+                        <Card key={index} className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                          <CardHeader>
+                            <CardTitle className={`text-${color}-400 text-lg flex items-center gap-2`}>
+                              <Icon className="w-5 h-5" />
+                              {time}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <h4 className="font-semibold text-white text-lg">{meal.name}</h4>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div className="text-gray-300">
+                                <span className="font-medium">Calorias:</span> {meal.calories}
+                              </div>
+                              <div className="text-gray-300">
+                                <span className="font-medium">Proteína:</span> {meal.protein}g
+                              </div>
+                              <div className="text-gray-300">
+                                <span className="font-medium">Carbs:</span> {meal.carbs}g
+                              </div>
+                              <div className="text-gray-300">
+                                <span className="font-medium">Gordura:</span> {meal.fat}g
+                              </div>
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-gray-300 mb-2">Ingredientes:</h5>
+                              <ul className="text-sm text-gray-400 space-y-1">
+                                {meal.ingredients.map((ingredient, i) => (
+                                  <li key={i} className="flex justify-between">
+                                    <span>• {ingredient.name}</span>
+                                    <span className="text-emerald-400 font-medium">
+                                      {ingredient.amount} {ingredient.unit}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
+                                  <BookOpen className="w-4 h-4 mr-2" />
+                                  Ver Modo de Preparo
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle className="text-emerald-400 text-xl">
+                                    {meal.name} - Modo de Preparo
+                                  </DialogTitle>
+                                  <DialogDescription className="text-gray-300">
+                                    Instruções detalhadas para preparar sua refeição
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <h4 className="font-semibold text-gray-300 mb-2">Ingredientes com Quantidades:</h4>
+                                    <ul className="space-y-2">
+                                      {meal.ingredients.map((ingredient, i) => (
+                                        <li key={i} className="flex justify-between items-center p-2 bg-slate-700/50 rounded">
+                                          <span>{ingredient.name}</span>
+                                          <span className="text-emerald-400 font-bold">
+                                            {ingredient.amount} {ingredient.unit}
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-gray-300 mb-2">Modo de Preparo:</h4>
+                                    <ol className="space-y-2">
+                                      {meal.instructions.map((instruction, i) => (
+                                        <li key={i} className="flex gap-3">
+                                          <span className="bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                            {i + 1}
+                                          </span>
+                                          <span className="text-gray-300">{instruction}</span>
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    <div className="text-center">
+                      <Button
+                        onClick={() => {
+                          setDietGoal('')
+                          setCurrentDietPlan(null)
+                        }}
+                        variant="outline"
+                        className="border-emerald-500 text-emerald-400 hover:bg-emerald-500/10"
+                      >
+                        Escolher Outro Objetivo
+                      </Button>
+                    </div>
+                  </div>
+                )
+              )}
+            </>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
+                <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-emerald-400 text-2xl">
+                      <CheckCircle className="w-6 h-6" />
+                      Alimentos Recomendados
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        <span>Proteínas magras (frango, peixe, ovos)</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        <span>Vegetais e folhas verdes</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        <span>Frutas com moderação</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        <span>Carboidratos integrais</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        <span>Muita água (2-3L por dia)</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-red-400 text-2xl">
+                      <X className="w-6 h-6" />
+                      Evitar
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <div className="w-4 h-4 bg-red-500 rounded-full" />
+                        <span>Açúcar refinado e doces</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <div className="w-4 h-4 bg-red-500 rounded-full" />
+                        <span>Frituras e fast food</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <div className="w-4 h-4 bg-red-500 rounded-full" />
+                        <span>Refrigerantes e bebidas açucaradas</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <div className="w-4 h-4 bg-red-500 rounded-full" />
+                        <span>Alimentos ultraprocessados</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <div className="w-4 h-4 bg-red-500 rounded-full" />
+                        <span>Excesso de álcool</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl mb-8">
+                <CardHeader>
+                  <CardTitle className="text-teal-400 text-2xl">Exemplo de Cardápio Básico</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="bg-emerald-500/20 p-4 rounded-lg">
+                      <h4 className="font-semibold text-emerald-400 mb-3">Café da Manhã</h4>
+                      <ul className="text-gray-300 space-y-1">
+                        <li>• Omelete com vegetais</li>
+                        <li>• Aveia com frutas</li>
+                        <li>• Chá verde</li>
+                      </ul>
+                    </div>
+                    <div className="bg-teal-500/20 p-4 rounded-lg">
+                      <h4 className="font-semibold text-teal-400 mb-3">Almoço</h4>
+                      <ul className="text-gray-300 space-y-1">
+                        <li>• Frango grelhado</li>
+                        <li>• Arroz integral</li>
+                        <li>• Salada verde</li>
+                      </ul>
+                    </div>
+                    <div className="bg-cyan-500/20 p-4 rounded-lg">
+                      <h4 className="font-semibold text-cyan-400 mb-3">Jantar</h4>
+                      <ul className="text-gray-300 space-y-1">
+                        <li>• Peixe assado</li>
+                        <li>• Batata doce</li>
+                        <li>• Brócolis no vapor</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 backdrop-blur-xl shadow-2xl">
+                <CardContent className="text-center py-8">
+                  <Crown className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-4">
+                    Dieta Personalizada PRO
+                  </h3>
+                  <p className="text-gray-300 mb-6">
+                    Tenha acesso a planos personalizados para emagrecimento ou ganho de massa, cardápios detalhados e receitas exclusivas
+                  </p>
+                  <Button
+                    onClick={() => setCurrentStep('pro')}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                  >
+                    Upgrade para PRO
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (currentStep === 'recipes' && currentUser?.isPro) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900">
         <Navigation showBackButton />
         <div className="container mx-auto px-4 max-w-6xl pt-24 pb-8">
           <div className="text-center mb-12">
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 rounded-2xl w-fit mx-auto mb-6">
-              <Utensils className="w-12 h-12 text-white" />
+              <ChefHat className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-5xl font-bold text-white mb-6">
-              Dieta Personalizada
-            </h1>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Plano alimentar adaptado ao seu perfil e objetivos
+            <h1 className="text-5xl font-bold text-white mb-6">Receitas Fit</h1>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Receitas saudáveis e deliciosas para acelerar seus resultados
             </p>
           </div>
 
-          {/* Seleção de Objetivo - Apenas para usuários PRO */}
-          {currentUser.isPro && !dietGoal && (
-            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl mb-8">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-white">Qual seu objetivo principal?</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Escolha seu objetivo para receber um plano personalizado
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  onClick={() => handleDietGoalSelect('emagrecimento')}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 px-8 py-6 text-lg"
-                >
-                  <TrendingDown className="w-5 h-5 mr-2" />
-                  Emagrecimento
-                </Button>
-                <Button
-                  onClick={() => handleDietGoalSelect('ganho_massa')}
-                  className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 px-8 py-6 text-lg"
-                >
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  Ganho de Massa
-                </Button>
+          {/* Filtros */}
+          <div className="flex flex-wrap gap-4 mb-8 justify-center">
+            {['Todas', 'Café da Manhã', 'Almoço', 'Jantar', 'Lanche', 'Sobremesa'].map((category) => (
+              <Button
+                key={category}
+                variant="outline"
+                className="border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+
+          {/* Grid de Receitas */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fitRecipes.map((recipe) => (
+              <Card key={recipe.id} className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                      {recipe.category}
+                    </Badge>
+                    <Badge 
+                      className={`
+                        ${recipe.difficulty === 'Fácil' ? 'bg-green-500/20 text-green-300 border-green-500/30' : 
+                          recipe.difficulty === 'Médio' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' : 
+                          'bg-red-500/20 text-red-300 border-red-500/30'}
+                      `}
+                    >
+                      {recipe.difficulty}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-white text-xl">{recipe.name}</CardTitle>
+                  <div className="flex items-center gap-4 text-sm text-gray-300">
+                    <div className="flex items-center gap-1">
+                      <Zap className="w-4 h-4 text-orange-400" />
+                      <span>{recipe.calories} cal</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Beef className="w-4 h-4 text-blue-400" />
+                      <span>{recipe.protein}g prot</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4 text-green-400" />
+                      <span>{recipe.prepTime}min</span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-300 mb-2">Ingredientes:</h4>
+                    <ul className="text-sm text-gray-400 space-y-1 max-h-32 overflow-y-auto">
+                      {recipe.ingredients.slice(0, 4).map((ingredient, i) => (
+                        <li key={i} className="flex justify-between">
+                          <span>• {ingredient.name}</span>
+                          <span className="text-emerald-400 font-medium">
+                            {ingredient.amount} {ingredient.unit}
+                          </span>
+                        </li>
+                      ))}
+                      {recipe.ingredients.length > 4 && (
+                        <li className="text-emerald-400">+ {recipe.ingredients.length - 4} mais...</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {recipe.tags.map((tag, i) => (
+                      <Badge key={i} variant="outline" className="text-xs border-gray-500 text-gray-400">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Ver Receita Completa
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-emerald-400 text-xl">
+                          {recipe.name}
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-300">
+                          {recipe.difficulty} • {recipe.prepTime} minutos • {recipe.calories} calorias
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-semibold text-gray-300 mb-2">Ingredientes:</h4>
+                          <ul className="space-y-2">
+                            {recipe.ingredients.map((ingredient, i) => (
+                              <li key={i} className="flex justify-between items-center p-2 bg-slate-700/50 rounded">
+                                <span>{ingredient.name}</span>
+                                <span className="text-emerald-400 font-bold">
+                                  {ingredient.amount} {ingredient.unit}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-300 mb-2">Modo de Preparo:</h4>
+                          <ol className="space-y-2">
+                            {recipe.instructions.map((instruction, i) => (
+                              <li key={i} className="flex gap-3">
+                                <span className="bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                  {i + 1}
+                                </span>
+                                <span className="text-gray-300">{instruction}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Adicionar mais receitas */}
+          <div className="text-center mt-12">
+            <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 backdrop-blur-xl shadow-2xl">
+              <CardContent className="py-8">
+                <ChefHat className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Mais Receitas em Breve!
+                </h3>
+                <p className="text-gray-300 mb-6">
+                  Estamos constantemente adicionando novas receitas fit para diversificar seu cardápio
+                </p>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-4 py-2">
+                    <Star className="w-4 h-4 mr-2" />
+                    +100 receitas
+                  </Badge>
+                  <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 px-4 py-2">
+                    <Heart className="w-4 h-4 mr-2" />
+                    Favoritas
+                  </Badge>
+                  <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 px-4 py-2">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Planejamento
+                  </Badge>
+                </div>
               </CardContent>
             </Card>
-          )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-          {/* Plano de Dieta */}
-          {(currentDietPlan || !currentUser.isPro) && (
-            <div className="space-y-8">
-              {/* Resumo Nutricional */}
-              {currentDietPlan && (
-                <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                  <CardHeader>
-                    <CardTitle className="text-2xl text-emerald-400 flex items-center gap-2">
-                      <BarChart3 className="w-6 h-6" />
-                      Resumo Nutricional Diário
-                    </CardTitle>
+  if (currentStep === 'workout') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900">
+        <Navigation showBackButton />
+        <div className="container mx-auto px-4 max-w-6xl pt-24 pb-8">
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-white mb-6">Treinos</h1>
+            <p className="text-xl text-gray-300">
+              {currentUser?.isPro ? 'Treinos completos e personalizados' : 'Exercícios básicos para começar sua jornada'}
+            </p>
+          </div>
+
+          {/* Seleção de Local de Treino */}
+          {!workoutLocation && (
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold text-white text-center mb-8">
+                Onde você prefere treinar?
+              </h2>
+              <div className="grid md:grid-cols-3 gap-8">
+                <Card 
+                  className="border-2 border-green-500/50 bg-green-500/10 backdrop-blur-xl shadow-2xl cursor-pointer hover:scale-105 transition-all duration-300"
+                  onClick={() => setWorkoutLocation('outdoor')}
+                >
+                  <CardHeader className="text-center">
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-2xl w-fit mx-auto mb-6">
+                      <TreePine className="w-12 h-12 text-white" />
+                    </div>
+                    <CardTitle className="text-3xl text-white mb-4">Ao Ar Livre</CardTitle>
+                    <CardDescription className="text-gray-300 text-lg">
+                      Treinos em parques, praças e espaços abertos
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid md:grid-cols-4 gap-6">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-emerald-400 mb-2">
-                          {currentDietPlan.totalCalories}
-                        </div>
-                        <div className="text-gray-300">Calorias</div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span>Corrida e caminhada</span>
                       </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-teal-400 mb-2">
-                          {currentDietPlan.totalProtein}g
-                        </div>
-                        <div className="text-gray-300">Proteínas</div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span>Exercícios funcionais</span>
                       </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-cyan-400 mb-2">
-                          {currentDietPlan.totalCarbs}g
-                        </div>
-                        <div className="text-gray-300">Carboidratos</div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span>Calistenia</span>
                       </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-purple-400 mb-2">
-                          {currentDietPlan.totalFat}g
-                        </div>
-                        <div className="text-gray-300">Gorduras</div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span>Ar puro e vitamina D</span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              )}
 
-              {/* Receitas Disponíveis */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {fitRecipes.map((recipe) => (
-                  <Card key={recipe.id} className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
-                    <CardHeader>
-                      <CardTitle className="text-xl text-white">{recipe.name}</CardTitle>
-                      <div className="flex gap-4 text-sm text-gray-300">
-                        <span>{recipe.calories} kcal</span>
-                        <span>{recipe.protein}g proteína</span>
-                        <span>{recipe.prepTime} min</span>
+                <Card 
+                  className="border-2 border-blue-500/50 bg-blue-500/10 backdrop-blur-xl shadow-2xl cursor-pointer hover:scale-105 transition-all duration-300"
+                  onClick={() => setWorkoutLocation('home')}
+                >
+                  <CardHeader className="text-center">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-600 p-4 rounded-2xl w-fit mx-auto mb-6">
+                      <Home className="w-12 h-12 text-white" />
+                    </div>
+                    <CardTitle className="text-3xl text-white mb-4">Em Casa</CardTitle>
+                    <CardDescription className="text-gray-300 text-lg">
+                      Treinos práticos no conforto do seu lar
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-blue-400" />
+                        <span>Sem equipamentos</span>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {recipe.tags.map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-emerald-400 border-emerald-500/50">
-                            {tag}
-                          </Badge>
-                        ))}
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-blue-400" />
+                        <span>Flexibilidade de horário</span>
                       </div>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
-                            <BookOpen className="w-4 h-4 mr-2" />
-                            Ver Receita Completa
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-slate-900 border-slate-700">
-                          <DialogHeader>
-                            <DialogTitle className="text-2xl text-white">{recipe.name}</DialogTitle>
-                            <DialogDescription className="text-gray-300">
-                              {recipe.category} • {recipe.prepTime} minutos • {recipe.difficulty}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid md:grid-cols-2 gap-6 mt-6">
-                            <div>
-                              <h3 className="text-lg font-semibold text-emerald-400 mb-4">Ingredientes:</h3>
-                              <ul className="space-y-2">
-                                {recipe.ingredients.map((ingredient, index) => (
-                                  <li key={index} className="text-gray-300 flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                                    {ingredient.amount} {ingredient.unit} {ingredient.name}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-teal-400 mb-4">Modo de Preparo:</h3>
-                              <ol className="space-y-3">
-                                {recipe.instructions.map((instruction, index) => (
-                                  <li key={index} className="text-gray-300 flex items-start gap-3">
-                                    <span className="bg-teal-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mt-0.5 flex-shrink-0">
-                                      {index + 1}
-                                    </span>
-                                    {instruction}
-                                  </li>
-                                ))}
-                              </ol>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Upgrade para PRO se não for usuário PRO */}
-              {!currentUser.isPro && (
-                <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="text-center py-8">
-                    <Crown className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-white mb-4">
-                      Desbloqueie Dietas Personalizadas
-                    </h3>
-                    <p className="text-gray-300 mb-6">
-                      Tenha acesso a planos alimentares científicos, calculados especificamente para seu perfil e objetivos
-                    </p>
-                    <Button
-                      onClick={() => setCurrentStep('pro')}
-                      className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
-                    >
-                      Upgrade para PRO
-                    </Button>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-blue-400" />
+                        <span>Privacidade total</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-blue-400" />
+                        <span>Economia de tempo</span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
+
+                <Card 
+                  className="border-2 border-purple-500/50 bg-purple-500/10 backdrop-blur-xl shadow-2xl cursor-pointer hover:scale-105 transition-all duration-300"
+                  onClick={() => setWorkoutLocation('gym')}
+                >
+                  <CardHeader className="text-center">
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-4 rounded-2xl w-fit mx-auto mb-6">
+                      <Building className="w-12 h-12 text-white" />
+                    </div>
+                    <CardTitle className="text-3xl text-white mb-4">Na Academia</CardTitle>
+                    <CardDescription className="text-gray-300 text-lg">
+                      Treinos com equipamentos profissionais
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-purple-400" />
+                        <span>Equipamentos variados</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-purple-400" />
+                        <span>Ambiente motivador</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-purple-400" />
+                        <span>Treinos intensos</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className="w-4 h-4 text-purple-400" />
+                        <span>Suporte profissional</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* Treinos baseados na localização escolhida */}
+          {workoutLocation && (
+            <>
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-bold text-white">
+                  Treinos {workoutLocation === 'outdoor' ? 'Ao Ar Livre' : workoutLocation === 'home' ? 'Em Casa' : 'Na Academia'}
+                </h2>
+                <Button
+                  onClick={() => setWorkoutLocation('')}
+                  variant="outline"
+                  className="border-emerald-500 text-emerald-400 hover:bg-emerald-500/10"
+                >
+                  Mudar Local
+                </Button>
+              </div>
+
+              {/* Treinos de Academia com Sistema Completo */}
+              {workoutLocation === 'gym' && (
+                <div className="space-y-8">
+                  {/* Seletor de Dia */}
+                  <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                    <CardHeader>
+                      <CardTitle className="text-purple-400 text-2xl">Cronograma Semanal</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                        {gymWorkouts.map((workout) => (
+                          <Button
+                            key={workout.day}
+                            onClick={() => setSelectedDay(workout.day)}
+                            variant={selectedDay === workout.day ? 'default' : 'outline'}
+                            className={`
+                              h-auto p-4 flex flex-col gap-2
+                              ${selectedDay === workout.day 
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
+                                : 'border-white/20 text-white hover:bg-white/10'
+                              }
+                            `}
+                          >
+                            <span className="font-semibold capitalize">
+                              {workout.day === 'segunda' ? 'SEG' :
+                               workout.day === 'terca' ? 'TER' :
+                               workout.day === 'quarta' ? 'QUA' :
+                               workout.day === 'quinta' ? 'QUI' :
+                               workout.day === 'sexta' ? 'SEX' : 'SAB'}
+                            </span>
+                            <span className="text-xs opacity-80">{workout.focus.split(',')[0]}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Treino do Dia Selecionado */}
+                  {(() => {
+                    const selectedWorkout = gymWorkouts.find(w => w.day === selectedDay)
+                    if (!selectedWorkout) return null
+
+                    return (
+                      <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-purple-400 text-2xl">
+                            {selectedWorkout.focus} - {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}-feira
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-6">
+                            {selectedWorkout.exercises.map((exercise, index) => {
+                              const log = getExerciseLog(exercise.id)
+                              const adjustedReps = currentUser ? getRepsForGoal(exercise.reps, currentUser.goal) : exercise.reps
+
+                              return (
+                                <div key={exercise.id} className="bg-white/5 p-6 rounded-lg">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={exercise.id}
+                                          checked={log?.completed || false}
+                                          onCheckedChange={() => toggleExerciseComplete(exercise.id)}
+                                        />
+                                        <label htmlFor={exercise.id} className="sr-only">
+                                          Marcar {exercise.name} como completo
+                                        </label>
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold text-white text-lg">{exercise.name}</h4>
+                                        <p className="text-gray-400 text-sm">{exercise.muscleGroup}</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-purple-400 font-bold text-lg">
+                                        {exercise.sets} x {adjustedReps}
+                                      </div>
+                                      <div className="text-gray-400 text-sm">séries x reps</div>
+                                    </div>
+                                  </div>
+
+                                  <p className="text-gray-300 mb-4">{exercise.description}</p>
+                                  
+                                  <div className="bg-blue-500/10 p-3 rounded-lg mb-4">
+                                    <p className="text-blue-300 text-sm">
+                                      <strong>Dica:</strong> {exercise.tips}
+                                    </p>
+                                  </div>
+
+
+
+                                  {/* Registro de Peso e Repetições */}
+                                  <div className="grid md:grid-cols-3 gap-4">
+                                    <div>
+                                      <Label htmlFor={`weight-${exercise.id}`} className="text-gray-300">
+                                        Peso (kg)
+                                      </Label>
+                                      <Input
+                                        id={`weight-${exercise.id}`}
+                                        type="number"
+                                        placeholder="0"
+                                        defaultValue={log?.weight || ''}
+                                        className="bg-white/10 border-white/20 text-white"
+                                        onBlur={(e) => {
+                                          const weight = parseFloat(e.target.value) || 0
+                                          const reps = log?.reps || 0
+                                          if (weight > 0 || reps > 0) {
+                                            logWorkout(exercise.id, weight, reps)
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor={`reps-${exercise.id}`} className="text-gray-300">
+                                        Repetições
+                                      </Label>
+                                      <Input
+                                        id={`reps-${exercise.id}`}
+                                        type="number"
+                                        placeholder="0"
+                                        defaultValue={log?.reps || ''}
+                                        className="bg-white/10 border-white/20 text-white"
+                                        onBlur={(e) => {
+                                          const reps = parseInt(e.target.value) || 0
+                                          const weight = log?.weight || 0
+                                          if (weight > 0 || reps > 0) {
+                                            logWorkout(exercise.id, weight, reps)
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="flex items-end">
+                                      <Button
+                                        onClick={() => {
+                                          const weightInput = document.getElementById(`weight-${exercise.id}`) as HTMLInputElement
+                                          const repsInput = document.getElementById(`reps-${exercise.id}`) as HTMLInputElement
+                                          const weight = parseFloat(weightInput.value) || 0
+                                          const reps = parseInt(repsInput.value) || 0
+                                          logWorkout(exercise.id, weight, reps)
+                                        }}
+                                        className="w-full bg-purple-500 hover:bg-purple-600"
+                                      >
+                                        <Save className="w-4 h-4 mr-2" />
+                                        Salvar
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Histórico do Último Treino */}
+                                  {log && log.weight > 0 && log.reps > 0 && (
+                                    <div className="mt-4 p-3 bg-green-500/10 rounded-lg">
+                                      <p className="text-green-300 text-sm">
+                                        <strong>Último registro:</strong> {log.weight}kg x {log.reps} reps
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Resumo do Treino */}
+                          <div className="mt-8 p-6 bg-purple-500/10 rounded-lg">
+                            <h4 className="font-semibold text-purple-300 mb-4">Resumo do Treino</h4>
+                            <div className="grid md:grid-cols-3 gap-4 text-center">
+                              <div>
+                                <div className="text-2xl font-bold text-purple-400">
+                                  {selectedWorkout.exercises.length}
+                                </div>
+                                <div className="text-gray-300">Exercícios</div>
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-purple-400">
+                                  {selectedWorkout.exercises.filter(ex => getExerciseLog(ex.id)?.completed).length}
+                                </div>
+                                <div className="text-gray-300">Completos</div>
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-purple-400">
+                                  {Math.round((selectedWorkout.exercises.filter(ex => getExerciseLog(ex.id)?.completed).length / selectedWorkout.exercises.length) * 100) || 0}%
+                                </div>
+                                <div className="text-gray-300">Progresso</div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })()}
+                </div>
               )}
+
+              {/* Outros tipos de treino (outdoor e home) */}
+              {workoutLocation !== 'gym' && (
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  {workoutLocation === 'outdoor' && (
+                    <>
+                      <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-emerald-400 text-xl flex items-center gap-2">
+                            <TreePine className="w-5 h-5" />
+                            Cardio no Parque
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Corrida leve</span>
+                            <span className="text-emerald-400">20min</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Polichinelos</span>
+                            <span className="text-emerald-400">3x20</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Burpees</span>
+                            <span className="text-emerald-400">3x8</span>
+                          </div>
+                          <Button className="w-full bg-emerald-500 hover:bg-emerald-600 mt-4">
+                            Iniciar Treino
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-teal-400 text-xl flex items-center gap-2">
+                            <TreePine className="w-5 h-5" />
+                            Força Funcional
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Flexões no banco</span>
+                            <span className="text-teal-400">3x12</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Agachamentos</span>
+                            <span className="text-teal-400">3x15</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Prancha</span>
+                            <span className="text-teal-400">3x45s</span>
+                          </div>
+                          <Button className="w-full bg-teal-500 hover:bg-teal-600 mt-4">
+                            Iniciar Treino
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-cyan-400 text-xl flex items-center gap-2">
+                            <TreePine className="w-5 h-5" />
+                            Calistenia
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Barra fixa</span>
+                            <span className="text-cyan-400">3x5</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Paralelas</span>
+                            <span className="text-cyan-400">3x8</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Muscle-up</span>
+                            <span className="text-cyan-400">2x3</span>
+                          </div>
+                          <Button className="w-full bg-cyan-500 hover:bg-cyan-600 mt-4">
+                            Iniciar Treino
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+
+                  {workoutLocation === 'home' && (
+                    <>
+                      <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-emerald-400 text-xl flex items-center gap-2">
+                            <Home className="w-5 h-5" />
+                            HIIT Básico
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Flexões</span>
+                            <span className="text-emerald-400">3x10</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Agachamentos</span>
+                            <span className="text-emerald-400">3x15</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Mountain climbers</span>
+                            <span className="text-emerald-400">3x20</span>
+                          </div>
+                          <Button className="w-full bg-emerald-500 hover:bg-emerald-600 mt-4">
+                            Iniciar Treino
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-teal-400 text-xl flex items-center gap-2">
+                            <Home className="w-5 h-5" />
+                            Core & Abs
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Prancha</span>
+                            <span className="text-teal-400">3x60s</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Abdominais</span>
+                            <span className="text-teal-400">3x20</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Russian twists</span>
+                            <span className="text-teal-400">3x15</span>
+                          </div>
+                          <Button className="w-full bg-teal-500 hover:bg-teal-600 mt-4">
+                            Iniciar Treino
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-cyan-400 text-xl flex items-center gap-2">
+                            <Home className="w-5 h-5" />
+                            Yoga Flow
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Saudação ao sol</span>
+                            <span className="text-cyan-400">5x</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-300">
+                            <span>Guerreiro</span>
+                            <span className="text-cyan-400">3x30s</span>
+                          </div>
+                          <div className="flex items-center justify-between text-gray-300">
+                            <span>Relaxamento</span>
+                            <span className="text-cyan-400">5min</span>
+                          </div>
+                          <Button className="w-full bg-cyan-500 hover:bg-cyan-600 mt-4">
+                            Iniciar Treino
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {!currentUser?.isPro && (
+            <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 backdrop-blur-xl shadow-2xl">
+              <CardContent className="text-center py-8">
+                <Crown className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Treinos Completos PRO
+                </h3>
+                <p className="text-gray-300 mb-6">
+                  Acesse centenas de exercícios com vídeos HD, treinos personalizados, desafio calistênico de 30 dias e acompanhamento de progresso
+                </p>
+                <div className="flex flex-wrap justify-center gap-4 mb-6">
+                  <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 px-4 py-2">
+                    <Flame className="w-4 h-4 mr-2" />
+                    Desafio 30 Dias
+                  </Badge>
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-4 py-2">
+                    <Play className="w-4 h-4 mr-2" />
+                    Vídeos HD
+                  </Badge>
+                  <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 px-4 py-2">
+                    <Target className="w-4 h-4 mr-2" />
+                    Progressão
+                  </Badge>
+                </div>
+                <Button
+                  onClick={() => setCurrentStep('pro')}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                >
+                  Upgrade para PRO
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (currentStep === 'challenge' && currentUser?.isPro) {
+    const currentDayWorkout = getDayWorkout(challengeDay)
+    const progressPercentage = (completedDays.length / 30) * 100
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-orange-900 to-red-900">
+        <Navigation showBackButton />
+        <div className="container mx-auto px-4 max-w-6xl pt-24 pb-8">
+          <div className="text-center mb-12">
+            <div className="bg-gradient-to-r from-orange-500 to-red-600 p-4 rounded-2xl w-fit mx-auto mb-6">
+              <Flame className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-5xl font-bold text-white mb-6">
+              Desafio Calistênico 30 Dias
+            </h1>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+              Transforme seu corpo com exercícios funcionais que queimam gordura rapidamente
+            </p>
+            
+            {/* Progress Bar */}
+            <div className="max-w-2xl mx-auto mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-gray-300 font-medium">Progresso do Desafio</span>
+                <span className="text-orange-400 font-bold text-lg">
+                  {completedDays.length}/30 dias
+                </span>
+              </div>
+              <div className="w-full bg-gray-700/50 rounded-full h-4 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8 mb-8">
+            {/* Seletor de Dia */}
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-orange-400 text-2xl">Selecionar Dia</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-6 gap-2">
+                  {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
+                    <Button
+                      key={day}
+                      onClick={() => setChallengeDay(day)}
+                      variant={challengeDay === day ? 'default' : 'outline'}
+                      className={`
+                        w-full h-12 text-sm
+                        ${completedDays.includes(day) 
+                          ? 'bg-green-500 hover:bg-green-600 text-white border-green-500' 
+                          : challengeDay === day 
+                            ? 'bg-gradient-to-r from-orange-500 to-red-500' 
+                            : 'border-white/20 text-white hover:bg-white/10'
+                        }
+                      `}
+                    >
+                      {completedDays.includes(day) ? <CheckCircle className="w-4 h-4" /> : day}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Treino do Dia */}
+            <Card className="lg:col-span-2 border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-orange-400 text-2xl">
+                    Dia {challengeDay} - {currentDayWorkout.focus}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      className={`
+                        ${currentDayWorkout.difficulty === 'Fácil' ? 'bg-green-500' : 
+                          currentDayWorkout.difficulty === 'Médio' ? 'bg-yellow-500' : 'bg-red-500'}
+                      `}
+                    >
+                      {currentDayWorkout.difficulty}
+                    </Badge>
+                    <Badge className="bg-orange-500">
+                      <Timer className="w-3 h-3 mr-1" />
+                      {currentDayWorkout.estimatedTime}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  {currentDayWorkout.exercises.map((exercise, index) => (
+                    <div key={index} className="bg-white/5 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-white text-lg">{exercise.name}</h4>
+                        <span className="text-orange-400 font-bold">
+                          {exercise.reps} {exercise.duration && `(${exercise.duration})`}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 text-sm">{exercise.description}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-4 pt-6">
+                  <Button
+                    onClick={() => completeDay(challengeDay)}
+                    disabled={completedDays.includes(challengeDay)}
+                    className={`
+                      flex-1 py-3 font-semibold
+                      ${completedDays.includes(challengeDay)
+                        ? 'bg-green-500 hover:bg-green-600'
+                        : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+                      }
+                    `}
+                  >
+                    {completedDays.includes(challengeDay) ? (
+                      <>
+                        <CheckCircle className="w-5 h-5 mr-2" />
+                        Concluído
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-5 h-5 mr-2" />
+                        Iniciar Treino
+                      </>
+                    )}
+                  </Button>
+                  
+                  {challengeDay < 30 && (
+                    <Button
+                      onClick={() => setChallengeDay(challengeDay + 1)}
+                      variant="outline"
+                      className="border-orange-500 text-orange-400 hover:bg-orange-500/10"
+                    >
+                      Próximo Dia
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Estatísticas do Desafio */}
+          <div className="grid md:grid-cols-4 gap-6">
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-orange-400 mb-2">{completedDays.length}</div>
+                <div className="text-gray-300">Dias Completos</div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-red-400 mb-2">{30 - completedDays.length}</div>
+                <div className="text-gray-300">Dias Restantes</div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-yellow-400 mb-2">{Math.round(progressPercentage)}%</div>
+                <div className="text-gray-300">Progresso</div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-green-400 mb-2">
+                  {completedDays.length > 0 ? Math.round(completedDays.length / 30 * 100) : 0}
+                </div>
+                <div className="text-gray-300">Taxa de Sucesso</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Motivação */}
+          {completedDays.length > 0 && (
+            <Card className="border-0 bg-gradient-to-r from-orange-600/20 to-red-600/20 backdrop-blur-xl shadow-2xl mt-8">
+              <CardContent className="text-center py-8">
+                <Award className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Parabéns! Você está no caminho certo!
+                </h3>
+                <p className="text-gray-300 mb-6">
+                  {completedDays.length < 7 
+                    ? "Continue assim! Os primeiros dias são os mais importantes."
+                    : completedDays.length < 15
+                      ? "Excelente! Você já está criando o hábito do exercício."
+                      : completedDays.length < 25
+                        ? "Incrível! Você está quase lá, mantenha o foco!"
+                        : "Fantástico! Você é um verdadeiro guerreiro da calistenia!"
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (currentStep === 'products') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900">
+        <Navigation showBackButton />
+        <div className="container mx-auto px-4 max-w-6xl pt-24 pb-8">
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-white mb-6">Produtos</h1>
+            <p className="text-xl text-gray-300">Suplementos e produtos para acelerar seus resultados</p>
+          </div>
+
+          {!currentUser?.isPro ? (
+            <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 backdrop-blur-xl shadow-2xl">
+              <CardContent className="text-center py-16">
+                <ShoppingCart className="w-16 h-16 text-emerald-400 mx-auto mb-6" />
+                <h3 className="text-3xl font-bold text-white mb-6">
+                  Loja Exclusiva PRO
+                </h3>
+                <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                  Acesse nossa loja exclusiva com suplementos premium, produtos de emagrecimento e combos especiais
+                </p>
+                <Button
+                  onClick={() => setCurrentStep('pro')}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 px-8 py-4 text-lg"
+                >
+                  <Crown className="w-5 h-5 mr-2" />
+                  Upgrade para PRO
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Produtos PRO aqui */}
             </div>
           )}
         </div>
@@ -2321,363 +3763,92 @@ export default function FitApp() {
     )
   }
 
-  if (currentStep === 'workout' && currentUser) {
+  if (currentStep === 'progress') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900">
         <Navigation showBackButton />
         <div className="container mx-auto px-4 max-w-6xl pt-24 pb-8">
           <div className="text-center mb-12">
-            <div className="bg-gradient-to-r from-teal-500 to-cyan-600 p-4 rounded-2xl w-fit mx-auto mb-6">
-              <Dumbbell className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-5xl font-bold text-white mb-6">
-              Treinos Personalizados
-            </h1>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Escolha seu ambiente de treino e receba exercícios adaptados
-            </p>
+            <h1 className="text-5xl font-bold text-white mb-6">Progresso</h1>
+            <p className="text-xl text-gray-300">Acompanhe sua evolução e conquistas</p>
           </div>
 
-          {/* Seleção de Local de Treino */}
-          {!workoutLocation && (
-            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl mb-8">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-white">Onde você prefere treinar?</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Escolha seu ambiente preferido para receber exercícios adequados
-                </CardDescription>
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-emerald-400 text-2xl">Estatísticas</CardTitle>
               </CardHeader>
-              <CardContent className="grid md:grid-cols-3 gap-4">
-                <Button
-                  onClick={() => setWorkoutLocation('outdoor')}
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-6 py-8 text-lg flex flex-col gap-3"
-                >
-                  <TreePine className="w-8 h-8" />
-                  <span className="font-semibold">Ao Ar Livre</span>
-                  <span className="text-sm opacity-80">Parques, praças, rua</span>
-                </Button>
-                <Button
-                  onClick={() => setWorkoutLocation('home')}
-                  className="bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 px-6 py-8 text-lg flex flex-col gap-3"
-                >
-                  <Home className="w-8 h-8" />
-                  <span className="font-semibold">Em Casa</span>
-                  <span className="text-sm opacity-80">Sem equipamentos</span>
-                </Button>
-                <Button
-                  onClick={() => setWorkoutLocation('gym')}
-                  className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 px-6 py-8 text-lg flex flex-col gap-3"
-                >
-                  <Building className="w-8 h-8" />
-                  <span className="font-semibold">Academia</span>
-                  <span className="text-sm opacity-80">Equipamentos completos</span>
-                </Button>
+              <CardContent className="space-y-4">
+                {currentUser && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Dias consecutivos:</span>
+                      <span className="text-emerald-400 font-bold text-xl">{currentUser.streakDays}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Treinos realizados:</span>
+                      <span className="text-teal-400 font-bold text-xl">{currentUser.completedWorkouts}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Peso perdido:</span>
+                      <span className="text-cyan-400 font-bold text-xl">{currentUser.weeklyWeightLoss.toFixed(1)}kg</span>
+                    </div>
+                    {currentUser.isPro && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-300">Desafio 30 dias:</span>
+                        <span className="text-orange-400 font-bold text-xl">{completedDays.length}/30</span>
+                      </div>
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
-          )}
 
-          {/* Treinos baseados na localização */}
-          {workoutLocation === 'gym' && (
-            <div className="space-y-8">
-              {/* Seletor de Dia */}
-              <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="text-2xl text-white">Treino de Academia - Sistema de Registro Diário</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Registre seus pesos e repetições para acompanhar seu progresso
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2 mb-6 overflow-x-auto">
-                    {['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'].map((day) => (
-                      <Button
-                        key={day}
-                        variant={selectedDay === day ? 'default' : 'outline'}
-                        onClick={() => setSelectedDay(day)}
-                        className="whitespace-nowrap"
-                      >
-                        {day.charAt(0).toUpperCase() + day.slice(1)}
-                      </Button>
-                    ))}
-                  </div>
-
-                  {/* Treino do Dia Selecionado */}
-                  {gymWorkouts.find(w => w.day === selectedDay) && (
-                    <div className="space-y-6">
-                      <div className="text-center">
-                        <h3 className="text-2xl font-bold text-emerald-400 mb-2">
-                          {gymWorkouts.find(w => w.day === selectedDay)?.focus}
-                        </h3>
-                        <p className="text-gray-300">
-                          Treino adaptado para {currentUser.goal?.toLowerCase()}
-                        </p>
-                      </div>
-
-                      <div className="grid gap-4">
-                        {gymWorkouts.find(w => w.day === selectedDay)?.exercises.map((exercise) => {
-                          const log = getExerciseLog(exercise.id)
-                          const currentWeight = exerciseWeights[exercise.id] || 0
-                          const currentReps = exerciseReps[exercise.id] || 0
-                          
-                          return (
-                            <Card key={exercise.id} className="border-0 bg-white/5 backdrop-blur-xl">
-                              <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                  <div>
-                                    <h4 className="text-xl font-bold text-white">{exercise.name}</h4>
-                                    <p className="text-gray-300">{exercise.muscleGroup}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant="outline" className="text-emerald-400 border-emerald-500/50 mb-2">
-                                      {getRepsForGoal(exercise.reps, currentUser.goal || '')}
-                                    </Badge>
-                                    <p className="text-sm text-gray-400">{exercise.sets} séries</p>
-                                  </div>
-                                </div>
-                                
-                                <p className="text-gray-300 mb-4">{exercise.description}</p>
-                                <p className="text-sm text-gray-400 mb-4">{exercise.tips}</p>
-                                
-                                {/* Controles de Peso e Repetições */}
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                  <div className="space-y-2">
-                                    <Label className="text-white">Peso (kg)</Label>
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => updateExerciseWeight(exercise.id, Math.max(0, currentWeight - 2.5))}
-                                        className="border-white/20 text-white hover:bg-white/10"
-                                      >
-                                        <Minus className="w-4 h-4" />
-                                      </Button>
-                                      <Input
-                                        type="number"
-                                        value={currentWeight}
-                                        onChange={(e) => updateExerciseWeight(exercise.id, parseFloat(e.target.value) || 0)}
-                                        className="text-center bg-white/10 border-white/20 text-white"
-                                        step="0.5"
-                                        min="0"
-                                      />
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => updateExerciseWeight(exercise.id, currentWeight + 2.5)}
-                                        className="border-white/20 text-white hover:bg-white/10"
-                                      >
-                                        <Plus className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <Label className="text-white">Repetições</Label>
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => updateExerciseReps(exercise.id, Math.max(0, currentReps - 1))}
-                                        className="border-white/20 text-white hover:bg-white/10"
-                                      >
-                                        <Minus className="w-4 h-4" />
-                                      </Button>
-                                      <Input
-                                        type="number"
-                                        value={currentReps}
-                                        onChange={(e) => updateExerciseReps(exercise.id, parseInt(e.target.value) || 0)}
-                                        className="text-center bg-white/10 border-white/20 text-white"
-                                        min="0"
-                                      />
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => updateExerciseReps(exercise.id, currentReps + 1)}
-                                        className="border-white/20 text-white hover:bg-white/10"
-                                      >
-                                        <Plus className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20"
-                                    >
-                                      <PlayCircle className="w-4 h-4 mr-2" />
-                                      Ver Execução
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        updateExerciseWeight(exercise.id, 0)
-                                        updateExerciseReps(exercise.id, 0)
-                                      }}
-                                      className="border-gray-500/50 text-gray-400 hover:bg-gray-500/20"
-                                    >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Reset
-                                    </Button>
-                                  </div>
-                                  <Button
-                                    onClick={() => {
-                                      logWorkout(exercise.id, currentWeight, currentReps)
-                                      toggleExerciseComplete(exercise.id)
-                                    }}
-                                    variant={log?.completed ? "default" : "outline"}
-                                    size="sm"
-                                    className={log?.completed ? "bg-green-600 hover:bg-green-700" : "border-white/20 text-white hover:bg-white/10"}
-                                  >
-                                    {log?.completed ? (
-                                      <>
-                                        <CheckCircle className="w-4 h-4 mr-2" />
-                                        Completo
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Timer className="w-4 h-4 mr-2" />
-                                        Marcar
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )
-                        })}
-                      </div>
-                      
-                      {/* Botão para Salvar Treino do Dia */}
-                      <div className="text-center">
-                        <Button
-                          onClick={saveDailyWorkout}
-                          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 px-8 py-3 text-lg font-semibold"
-                        >
-                          <Save className="w-5 h-5 mr-2" />
-                          Salvar Treino do Dia
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {workoutLocation === 'home' && (
             <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-white">Treino em Casa</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Exercícios funcionais sem equipamentos
-                </CardDescription>
+              <CardHeader>
+                <CardTitle className="text-teal-400 text-2xl">Conquistas</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-emerald-400">Exercícios de Força</h3>
-                    <div className="space-y-3">
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Flexões</h4>
-                        <p className="text-gray-300 text-sm">3x10-15 repetições</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Agachamentos</h4>
-                        <p className="text-gray-300 text-sm">3x15-20 repetições</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Prancha</h4>
-                        <p className="text-gray-300 text-sm">3x30-60 segundos</p>
-                      </div>
-                    </div>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Award className="w-5 h-5 text-emerald-500" />
+                  <span className="text-gray-300">Primeira semana completa</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Award className="w-5 h-5 text-teal-500" />
+                  <span className="text-gray-300">10 treinos realizados</span>
+                </div>
+                {currentUser?.isPro && completedDays.length >= 7 && (
+                  <div className="flex items-center gap-3">
+                    <Award className="w-5 h-5 text-orange-500" />
+                    <span className="text-gray-300">Primeira semana do desafio</span>
                   </div>
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-teal-400">Exercícios Cardio</h3>
-                    <div className="space-y-3">
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Polichinelos</h4>
-                        <p className="text-gray-300 text-sm">3x20-30 repetições</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Burpees</h4>
-                        <p className="text-gray-300 text-sm">3x5-10 repetições</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Mountain Climbers</h4>
-                        <p className="text-gray-300 text-sm">3x15-20 repetições</p>
-                      </div>
-                    </div>
-                  </div>
+                )}
+                <div className="flex items-center gap-3 opacity-50">
+                  <Award className="w-5 h-5 text-gray-500" />
+                  <span className="text-gray-500">Primeiro mês (bloqueado)</span>
                 </div>
               </CardContent>
             </Card>
-          )}
+          </div>
 
-          {workoutLocation === 'outdoor' && (
-            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-white">Treino ao Ar Livre</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Aproveite o ambiente natural para se exercitar
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-green-400">Exercícios Funcionais</h3>
-                    <div className="space-y-3">
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Corrida/Caminhada</h4>
-                        <p className="text-gray-300 text-sm">20-30 minutos</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Flexões no Banco</h4>
-                        <p className="text-gray-300 text-sm">3x8-12 repetições</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Agachamentos com Salto</h4>
-                        <p className="text-gray-300 text-sm">3x10-15 repetições</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-emerald-400">Exercícios com Equipamentos Urbanos</h3>
-                    <div className="space-y-3">
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Barra Fixa</h4>
-                        <p className="text-gray-300 text-sm">3x5-10 repetições</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Paralelas</h4>
-                        <p className="text-gray-300 text-sm">3x5-8 repetições</p>
-                      </div>
-                      <div className="p-4 bg-white/5 rounded-lg">
-                        <h4 className="font-semibold text-white">Escadas</h4>
-                        <p className="text-gray-300 text-sm">10-15 minutos subindo/descendo</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {!currentUser?.isPro && (
+            <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 backdrop-blur-xl shadow-2xl">
+              <CardContent className="text-center py-8">
+                <Crown className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Análise Completa PRO
+                </h3>
+                <p className="text-gray-300 mb-6">
+                  Tenha acesso a gráficos detalhados, relatórios semanais, progresso do desafio calistênico e análise completa do seu progresso
+                </p>
+                <Button
+                  onClick={() => setCurrentStep('pro')}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                >
+                  Upgrade para PRO
+                </Button>
               </CardContent>
             </Card>
-          )}
-
-          {/* Botão para trocar local */}
-          {workoutLocation && (
-            <div className="text-center">
-              <Button
-                onClick={() => setWorkoutLocation('')}
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Trocar Local de Treino
-              </Button>
-            </div>
           )}
         </div>
       </div>
@@ -2690,284 +3861,177 @@ export default function FitApp() {
         <Navigation showBackButton />
         <div className="container mx-auto px-4 max-w-6xl pt-24">
           <div className="text-center mb-12">
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 rounded-2xl w-fit mx-auto mb-6">
-              <Crown className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-5xl font-bold text-white mb-6">
-              Planos PRO
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+              FitLife Pro - Planos Premium
             </h1>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Escolha o plano que melhor se adapta ao seu estilo de vida e objetivos
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Escolha o plano ideal para transformar seu corpo e alcançar seus objetivos
             </p>
           </div>
 
-          {/* Planos */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {/* Plano Mensal */}
-            <Card className="border-2 border-emerald-500/50 bg-white/10 backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-3 rounded-xl w-fit mx-auto mb-4">
-                  <Calendar className="w-6 h-6 text-white" />
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            {/* Plano Básico */}
+            <Card className="border-2 border-gray-600 hover:border-emerald-400 transition-all duration-300 bg-white/10 backdrop-blur-xl">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-white">Básico</CardTitle>
+                <div className="text-4xl font-bold text-emerald-400 my-4">
+                  R$ 29<span className="text-lg text-gray-400">/mês</span>
                 </div>
-                <CardTitle className="text-2xl text-white mb-2">Mensal</CardTitle>
-                <div className="text-4xl font-bold text-emerald-400 mb-2">
-                  R$ 29,90
-                  <span className="text-lg text-gray-400 font-normal">/mês</span>
-                </div>
-                <CardDescription className="text-gray-300">
-                  Perfeito para começar
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span>Planos de dieta personalizados</span>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Dieta personalizada básica</span>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span>Treinos adaptativos</span>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>3 treinos por semana</span>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span>Desafio 30 dias</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span>Receitas exclusivas</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span>Análises avançadas</span>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => handlePurchase('mensal')}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 font-semibold"
-                >
-                  Escolher Mensal
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Plano Trimestral */}
-            <Card className="border-2 border-teal-500/50 bg-white/10 backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-3 rounded-xl w-fit mx-auto mb-4">
-                  <Calendar className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-2xl text-white mb-2">Trimestral</CardTitle>
-                <div className="text-4xl font-bold text-teal-400 mb-2">
-                  R$ 24,90
-                  <span className="text-lg text-gray-400 font-normal">/mês</span>
-                </div>
-                <div className="text-sm text-teal-300 mb-2">
-                  Economize 17%
-                </div>
-                <CardDescription className="text-gray-300">
-                  Mais popular
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-teal-400" />
-                    <span>Tudo do plano Mensal</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-teal-400" />
-                    <span>Relatórios trimestrais</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-teal-400" />
-                    <span>Suporte prioritário</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-teal-400" />
-                    <span>Consultoria nutricional</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-teal-400" />
-                    <span>Acesso antecipado</span>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => handlePurchase('trimestral')}
-                  className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 py-3 font-semibold"
-                >
-                  Escolher Trimestral
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Plano Semestral */}
-            <Card className="border-2 border-cyan-500/50 bg-white/10 backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 p-3 rounded-xl w-fit mx-auto mb-4">
-                  <Calendar className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-2xl text-white mb-2">Semestral</CardTitle>
-                <div className="text-4xl font-bold text-cyan-400 mb-2">
-                  R$ 19,90
-                  <span className="text-lg text-gray-400 font-normal">/mês</span>
-                </div>
-                <div className="text-sm text-cyan-300 mb-2">
-                  Economize 33%
-                </div>
-                <CardDescription className="text-gray-300">
-                  Melhor custo-benefício
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-cyan-400" />
-                    <span>Tudo do plano Trimestral</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-cyan-400" />
-                    <span>Planos personalizados</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-cyan-400" />
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
                     <span>Acompanhamento mensal</span>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-cyan-400" />
-                    <span>Grupo VIP no WhatsApp</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-cyan-400" />
-                    <span>E-books exclusivos</span>
-                  </div>
                 </div>
-                <Button
-                  onClick={() => handlePurchase('semestral')}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 py-3 font-semibold"
+                <Button 
+                  className="w-full bg-emerald-500 hover:bg-emerald-600"
+                  onClick={() => handlePurchase('basic')}
                 >
-                  Escolher Semestral
+                  Escolher Plano
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Plano Anual */}
-            <Card className="border-2 border-purple-500/50 bg-white/10 backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300 relative">
+            {/* Plano Premium */}
+            <Card className="border-2 border-emerald-500 shadow-2xl scale-105 relative bg-white/15 backdrop-blur-xl">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1">
-                  <Star className="w-3 h-3 mr-1" />
-                  MELHOR OFERTA
+                <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-1 text-white">
+                  MAIS POPULAR
                 </Badge>
               </div>
-              <CardHeader className="text-center pb-4 pt-6">
-                <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-xl w-fit mx-auto mb-4">
-                  <Calendar className="w-6 h-6 text-white" />
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-white">Premium</CardTitle>
+                <div className="text-4xl font-bold text-emerald-400 my-4">
+                  R$ 59<span className="text-lg text-gray-400">/mês</span>
                 </div>
-                <CardTitle className="text-2xl text-white mb-2">Anual</CardTitle>
-                <div className="text-4xl font-bold text-purple-400 mb-2">
-                  R$ 14,90
-                  <span className="text-lg text-gray-400 font-normal">/mês</span>
-                </div>
-                <div className="text-sm text-purple-300 mb-2">
-                  Economize 50%
-                </div>
-                <CardDescription className="text-gray-300">
-                  Máximo valor
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>Tudo do plano Semestral</span>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Dieta personalizada completa</span>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>Consultoria 1:1 mensal</span>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Treinos ilimitados com vídeos</span>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>Acesso vitalício</span>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-orange-500" />
+                    <span>Desafio Calistênico 30 Dias</span>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>Certificado de conclusão</span>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Receitas Fit exclusivas</span>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>Garantia de 30 dias</span>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Acompanhamento semanal</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Suporte via chat</span>
                   </div>
                 </div>
-                <Button
-                  onClick={() => handlePurchase('anual')}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 py-3 font-semibold"
+                <Button 
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                  onClick={() => handlePurchase('premium')}
                 >
-                  Escolher Anual
+                  Escolher Plano
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Plano Elite */}
+            <Card className="border-2 border-gray-600 hover:border-emerald-400 transition-all duration-300 bg-white/10 backdrop-blur-xl">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-white">Elite</CardTitle>
+                <div className="text-4xl font-bold text-emerald-400 my-4">
+                  R$ 99<span className="text-lg text-gray-400">/mês</span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Tudo do Premium +</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Consultoria 1:1 mensal</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Suplementos inclusos</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Acesso prioritário</span>
+                  </div>
+                </div>
+                <Button 
+                  className="w-full bg-emerald-500 hover:bg-emerald-600"
+                  onClick={() => handlePurchase('elite')}
+                >
+                  Escolher Plano
                 </Button>
               </CardContent>
             </Card>
           </div>
 
-          {/* Garantia e Benefícios */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <Card className="border-0 bg-white/5 backdrop-blur-xl shadow-xl">
-              <CardContent className="text-center p-6">
-                <Shield className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Garantia de 30 dias</h3>
-                <p className="text-gray-300">
-                  Não ficou satisfeita? Devolvemos 100% do seu dinheiro
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 bg-white/5 backdrop-blur-xl shadow-xl">
-              <CardContent className="text-center p-6">
-                <Sparkles className="w-12 h-12 text-teal-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Resultados comprovados</h3>
-                <p className="text-gray-300">
-                  95% das usuárias alcançam seus objetivos em 30 dias
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 bg-white/5 backdrop-blur-xl shadow-xl">
-              <CardContent className="text-center p-6">
-                <Heart className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Suporte especializado</h3>
-                <p className="text-gray-300">
-                  Equipe de nutricionistas e personal trainers à sua disposição
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Destaque do Desafio Calistênico */}
+          <Card className="border-2 border-orange-500/50 bg-gradient-to-r from-orange-600/20 to-red-600/20 backdrop-blur-xl shadow-2xl mb-8">
+            <CardContent className="text-center py-8">
+              <Flame className="w-16 h-16 text-orange-400 mx-auto mb-6" />
+              <h3 className="text-3xl font-bold text-white mb-4">
+                🔥 Desafio Calistênico de 30 Dias
+              </h3>
+              <p className="text-xl text-gray-300 mb-6 max-w-3xl mx-auto">
+                Exclusivo da versão PRO! Transforme seu corpo com exercícios funcionais progressivos que queimam gordura rapidamente. 
+                Do iniciante ao avançado em apenas 30 dias.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 mb-6">
+                <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 px-4 py-2">
+                  <Target className="w-4 h-4 mr-2" />
+                  Progressão Inteligente
+                </Badge>
+                <Badge className="bg-red-500/20 text-red-300 border-red-500/30 px-4 py-2">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Queima Gordura Rápida
+                </Badge>
+                <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-2">
+                  <Award className="w-4 h-4 mr-2" />
+                  Resultados Garantidos
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* FAQ */}
-          <Card className="border-0 bg-white/5 backdrop-blur-xl shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl text-white text-center">Perguntas Frequentes</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h4 className="text-lg font-semibold text-emerald-400 mb-2">
-                  Posso cancelar a qualquer momento?
-                </h4>
-                <p className="text-gray-300">
-                  Sim! Você pode cancelar sua assinatura a qualquer momento sem taxas adicionais.
-                </p>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-teal-400 mb-2">
-                  Como funciona a garantia?
-                </h4>
-                <p className="text-gray-300">
-                  Se não ficar satisfeita nos primeiros 30 dias, devolvemos 100% do valor pago.
-                </p>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-cyan-400 mb-2">
-                  Posso mudar de plano depois?
-                </h4>
-                <p className="text-gray-300">
-                  Claro! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento.
-                </p>
-              </div>
+          {/* Opção de continuar com versão gratuita */}
+          <Card className="border-2 border-gray-600 bg-white/5 backdrop-blur-xl">
+            <CardContent className="text-center py-8">
+              <h3 className="text-xl font-semibold text-gray-300 mb-4">
+                Não está pronto para o upgrade?
+              </h3>
+              <p className="text-gray-400 mb-6">
+                Continue usando nossa versão gratuita com recursos básicos para começar sua jornada
+              </p>
+              <Button
+                onClick={() => setCurrentStep('free')}
+                variant="outline"
+                className="border-emerald-500 text-emerald-400 hover:bg-emerald-500/10"
+              >
+                Continuar com Versão Gratuita
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -2975,6 +4039,171 @@ export default function FitApp() {
     )
   }
 
-  // Resto das páginas permanecem iguais...
+  if (currentStep === 'purchased') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900">
+        <Navigation showBackButton />
+        <div className="container mx-auto px-4 max-w-4xl pt-24 pb-8">
+          <div className="text-center mb-12">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 rounded-full w-fit mx-auto mb-8">
+              <CheckCircle className="w-16 h-16 text-white" />
+            </div>
+            <h1 className="text-5xl font-bold text-white mb-6">
+              Bem-vindo ao FitLife Pro!
+            </h1>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
+              Parabéns! Você agora tem acesso completo a todos os recursos premium do FitLife Pro
+            </p>
+            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2 text-lg">
+              <Crown className="w-5 h-5 mr-2" />
+              Plano {selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Ativo
+            </Badge>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-emerald-400 text-2xl">Recursos Desbloqueados</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                    <span>Dieta personalizada completa</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                    <span>Treinos ilimitados com vídeos HD</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-orange-500" />
+                    <span>Desafio Calistênico 30 Dias</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                    <span>Receitas Fit exclusivas</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                    <span>Análise avançada de progresso</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                    <span>Loja de produtos premium</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                    <span>Suporte especializado</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-teal-400 text-2xl">Próximos Passos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">1</span>
+                    </div>
+                    <span>Explore seu dashboard personalizado</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">2</span>
+                    </div>
+                    <span>Configure sua dieta personalizada</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">3</span>
+                    </div>
+                    <span>Inicie o Desafio Calistênico 30 Dias</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">4</span>
+                    </div>
+                    <span>Explore as receitas fit exclusivas</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <div className="w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">5</span>
+                    </div>
+                    <span>Acompanhe seu progresso diário</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Destaque do Desafio */}
+          <Card className="border-2 border-orange-500/50 bg-gradient-to-r from-orange-600/20 to-red-600/20 backdrop-blur-xl shadow-2xl mb-8">
+            <CardContent className="text-center py-8">
+              <Flame className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-4">
+                🔥 Desafio Calistênico Desbloqueado!
+              </h3>
+              <p className="text-gray-300 mb-6">
+                Seu programa exclusivo de 30 dias para queima de gordura rápida está pronto. Comece hoje mesmo!
+              </p>
+              <Button
+                onClick={() => setCurrentStep('challenge')}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 px-8 py-3 font-semibold"
+              >
+                <Flame className="w-5 h-5 mr-2" />
+                Iniciar Desafio Agora
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="text-center space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-6">Comece Agora Sua Transformação</h2>
+            <div className="grid md:grid-cols-5 gap-4">
+              <Button
+                onClick={() => setCurrentStep('dashboard')}
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 p-6 h-auto flex flex-col gap-3"
+              >
+                <BarChart3 className="w-8 h-8" />
+                <span className="font-semibold">Dashboard</span>
+              </Button>
+              <Button
+                onClick={() => setCurrentStep('diet')}
+                className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 p-6 h-auto flex flex-col gap-3"
+              >
+                <Utensils className="w-8 h-8" />
+                <span className="font-semibold">Dieta PRO</span>
+              </Button>
+              <Button
+                onClick={() => setCurrentStep('workout')}
+                className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 p-6 h-auto flex flex-col gap-3"
+              >
+                <Dumbbell className="w-8 h-8" />
+                <span className="font-semibold">Treinos PRO</span>
+              </Button>
+              <Button
+                onClick={() => setCurrentStep('challenge')}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 p-6 h-auto flex flex-col gap-3"
+              >
+                <Flame className="w-8 h-8" />
+                <span className="font-semibold">Desafio 30D</span>
+              </Button>
+              <Button
+                onClick={() => setCurrentStep('recipes')}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 p-6 h-auto flex flex-col gap-3"
+              >
+                <ChefHat className="w-8 h-8" />
+                <span className="font-semibold">Receitas Fit</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return null
 }

@@ -2,30 +2,40 @@
 const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
   },
+  // Configurações para resolver problemas de RSC payload
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+        ],
+      },
+    ];
+  },
+  // Desabilitar otimizações que podem causar problemas
+  swcMinify: false,
+  // Configurações de servidor
+  serverRuntimeConfig: {},
+  publicRuntimeConfig: {},
+  // Configurações de build
+  output: 'standalone',
+  poweredByHeader: false,
   // Configurações de imagem
   images: {
     unoptimized: true,
-  },
-  // Configurações para resolver problemas de runtime
-  webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    return config;
   },
 };
 
