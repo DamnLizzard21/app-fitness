@@ -49,7 +49,7 @@ export default function AccountPage() {
     name: currentUser?.name || '',
     email: currentUser?.email || '',
     dateOfBirth: currentUser?.dateOfBirth || '',
-    gender: currentUser?.gender || '',
+    gender: currentUser?.gender as 'male' | 'female' | 'other' | undefined || undefined,
     height: currentUser?.height || '',
     weight: currentUser?.weight || '',
     unit: currentUser?.unit || 'metric',
@@ -256,8 +256,8 @@ export default function AccountPage() {
                 <div className="space-y-2">
                   <Label htmlFor="gender" className="text-white">Sexo (Opcional)</Label>
                   <Select
-                    value={profileData.gender}
-                    onValueChange={(value) => setProfileData({...profileData, gender: value})}
+                    value={profileData.gender || ''}
+                    onValueChange={(value) => setProfileData({...profileData, gender: value as 'male' | 'female' | 'other' | undefined})}
                     disabled={!isEditing}
                   >
                     <SelectTrigger className="bg-white/10 border-white/20 text-white disabled:opacity-50">

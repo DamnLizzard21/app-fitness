@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Dumbbell, Clock, Target, Play, CheckCircle, RotateCcw, Zap, Fire, Trophy, MapPin, ChevronDown, Home, Building, Trees, Waves } from 'lucide-react'
+import { ArrowLeft, Dumbbell, Clock, Target, Play, CheckCircle, RotateCcw, Zap, Flame, Trophy, MapPin, ChevronDown, Home, Building, Trees, Waves } from 'lucide-react'
 import Link from 'next/link'
 
 export default function Treinos() {
@@ -283,7 +283,7 @@ export default function Treinos() {
           <div className="group bg-gradient-to-br from-cyan-500/20 to-blue-500/20 backdrop-blur-sm rounded-2xl p-6 border border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/20">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                <Fire className="w-6 h-6 text-white" />
+                <Flame className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-semibold text-lg">Tempo Total</h3>
