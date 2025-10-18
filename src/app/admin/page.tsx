@@ -3,546 +3,373 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Progress } from '@/components/ui/progress'
 import { 
   Users, 
-  BarChart3, 
-  Settings, 
-  Shield, 
-  Crown, 
   TrendingUp, 
-  Activity,
-  UserCheck,
-  UserX,
-  Edit,
-  Trash2,
-  Plus,
-  Search,
-  Filter,
-  Download,
-  Mail,
-  Phone,
-  Calendar,
-  Target,
-  Dumbbell,
-  Utensils,
+  Activity, 
+  Crown, 
+  BarChart3, 
+  Calendar, 
+  Target, 
   Award,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Eye,
+  Shield,
+  Settings,
   FileText,
-  Globe,
-  Lock,
-  Unlock,
-  RefreshCw,
-  Save,
-  X
+  Download,
+  UserCheck,
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
-interface AdminUser {
+interface AdminStats {
+  totalUsers: number
+  proUsers: number
+  activeUsers: number
+  totalWorkouts: number
+  totalCaloriesBurned: number
+  averageWeightLoss: number
+  conversionRate: number
+  monthlyRevenue: number
+}
+
+interface UserMetrics {
   id: string
   name: string
   email: string
-  role: 'admin' | 'moderator' | 'user'
   isPro: boolean
-  status: 'active' | 'inactive' | 'suspended'
-  createdAt: Date
-  lastLogin: Date
-  totalWorkouts: number
-  weightLoss: number
-  subscriptionEnd?: Date
+  isAdmin: boolean
+  streakDays: number
+  completedWorkouts: number
+  totalCaloriesBurned: number
+  weeklyWeightLoss: number
+  createdAt: string
+  lastActive: string
 }
 
-interface SystemStats {
-  totalUsers: number
-  activeUsers: number
-  proUsers: number
-  totalWorkouts: number
-  totalRevenue: number
-  avgWeightLoss: number
-  userGrowth: number
-  retentionRate: number
-}
-
-interface AdminSettings {
-  maintenanceMode: boolean
-  registrationEnabled: boolean
-  proFeaturesEnabled: boolean
-  emailNotifications: boolean
-  dataBackup: boolean
-  analyticsEnabled: boolean
-  maxUsersPerDay: number
-  sessionTimeout: number
-}
-
-export default function AdminPanel() {
-  const [currentTab, setCurrentTab] = useState('dashboard')
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<AdminUser[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filterRole, setFilterRole] = useState<string>('all')
-  const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [systemStats, setSystemStats] = useState<SystemStats>({
+export default function AdminPage() {
+  const { currentUser } = useAuth()
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'metrics' | 'reports'>('overview')
+  const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
-    activeUsers: 0,
     proUsers: 0,
+    activeUsers: 0,
     totalWorkouts: 0,
-    totalRevenue: 0,
-    avgWeightLoss: 0,
-    userGrowth: 0,
-    retentionRate: 0
+    totalCaloriesBurned: 0,
+    averageWeightLoss: 0,
+    conversionRate: 0,
+    monthlyRevenue: 0
   })
-  const [adminSettings, setAdminSettings] = useState<AdminSettings>({
-    maintenanceMode: false,
-    registrationEnabled: true,
-    proFeaturesEnabled: true,
-    emailNotifications: true,
-    dataBackup: true,
-    analyticsEnabled: true,
-    maxUsersPerDay: 1000,
-    sessionTimeout: 30
-  })
+  const [users, setUsers] = useState<UserMetrics[]>([])
 
-  // Simular dados de usuários
+  // Verificar se é admin
   useEffect(() => {
-    const mockUsers: AdminUser[] = [
-      {
-        id: '1',
-        name: 'João Silva',
-        email: 'joao@email.com',
-        role: 'user',
-        isPro: true,
-        status: 'active',
-        createdAt: new Date('2024-01-15'),
-        lastLogin: new Date('2024-10-18'),
-        totalWorkouts: 45,
-        weightLoss: 8.5,
-        subscriptionEnd: new Date('2024-12-15')
-      },
-      {
-        id: '2',
-        name: 'Maria Santos',
-        email: 'maria@email.com',
-        role: 'user',
-        isPro: false,
-        status: 'active',
-        createdAt: new Date('2024-02-20'),
-        lastLogin: new Date('2024-10-17'),
-        totalWorkouts: 23,
-        weightLoss: 4.2
-      },
-      {
-        id: '3',
-        name: 'Pedro Costa',
-        email: 'pedro@email.com',
-        role: 'moderator',
-        isPro: true,
-        status: 'active',
-        createdAt: new Date('2024-01-10'),
-        lastLogin: new Date('2024-10-18'),
-        totalWorkouts: 67,
-        weightLoss: 12.3,
-        subscriptionEnd: new Date('2025-01-10')
-      },
-      {
-        id: '4',
-        name: 'Ana Oliveira',
-        email: 'ana@email.com',
-        role: 'user',
-        isPro: true,
-        status: 'inactive',
-        createdAt: new Date('2024-03-05'),
-        lastLogin: new Date('2024-09-15'),
-        totalWorkouts: 12,
-        weightLoss: 2.1,
-        subscriptionEnd: new Date('2024-11-05')
-      },
-      {
-        id: '5',
-        name: 'Carlos Ferreira',
-        email: 'carlos@email.com',
-        role: 'user',
-        isPro: false,
-        status: 'suspended',
-        createdAt: new Date('2024-04-12'),
-        lastLogin: new Date('2024-08-20'),
-        totalWorkouts: 8,
-        weightLoss: 1.5
-      }
-    ]
+    if (!currentUser?.isAdmin) {
+      window.location.href = '/'
+      return
+    }
+
+    // Carregar dados dos usuários
+    loadUsersData()
+  }, [currentUser])
+
+  const loadUsersData = () => {
+    try {
+      const usersData = JSON.parse(localStorage.getItem('users') || '[]')
+      
+      // Calcular estatísticas
+      const totalUsers = usersData.length
+      const proUsers = usersData.filter((u: any) => u.isPro).length
+      const activeUsers = usersData.filter((u: any) => {
+        const lastActive = new Date(u.updatedAt || u.createdAt)
+        const daysSinceActive = (Date.now() - lastActive.getTime()) / (1000 * 60 * 60 * 24)
+        return daysSinceActive <= 7
+      }).length
+
+      const totalWorkouts = usersData.reduce((sum: number, u: any) => sum + (u.completedWorkouts || 0), 0)
+      const totalCaloriesBurned = usersData.reduce((sum: number, u: any) => sum + (u.totalCaloriesBurned || 0), 0)
+      const averageWeightLoss = usersData.reduce((sum: number, u: any) => sum + (u.weeklyWeightLoss || 0), 0) / totalUsers
+      const conversionRate = totalUsers > 0 ? (proUsers / totalUsers) * 100 : 0
+      const monthlyRevenue = proUsers * 29.90 // Assumindo plano mensal médio
+
+      setStats({
+        totalUsers,
+        proUsers,
+        activeUsers,
+        totalWorkouts,
+        totalCaloriesBurned,
+        averageWeightLoss,
+        conversionRate,
+        monthlyRevenue
+      })
+
+      // Preparar dados dos usuários para exibição
+      const userMetrics: UserMetrics[] = usersData.map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        isPro: u.isPro || false,
+        isAdmin: u.isAdmin || false,
+        streakDays: u.streakDays || 0,
+        completedWorkouts: u.completedWorkouts || 0,
+        totalCaloriesBurned: u.totalCaloriesBurned || 0,
+        weeklyWeightLoss: u.weeklyWeightLoss || 0,
+        createdAt: u.createdAt,
+        lastActive: u.updatedAt || u.createdAt
+      }))
+
+      setUsers(userMetrics)
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
+    }
+  }
+
+  const exportData = () => {
+    const data = {
+      stats,
+      users,
+      exportDate: new Date().toISOString()
+    }
     
-    setUsers(mockUsers)
-    setFilteredUsers(mockUsers)
-    
-    // Calcular estatísticas
-    const stats: SystemStats = {
-      totalUsers: mockUsers.length,
-      activeUsers: mockUsers.filter(u => u.status === 'active').length,
-      proUsers: mockUsers.filter(u => u.isPro).length,
-      totalWorkouts: mockUsers.reduce((sum, u) => sum + u.totalWorkouts, 0),
-      totalRevenue: mockUsers.filter(u => u.isPro).length * 29.90,
-      avgWeightLoss: mockUsers.reduce((sum, u) => sum + u.weightLoss, 0) / mockUsers.length,
-      userGrowth: 15.2,
-      retentionRate: 78.5
-    }
-    setSystemStats(stats)
-  }, [])
-
-  // Filtrar usuários
-  useEffect(() => {
-    let filtered = users
-
-    if (searchTerm) {
-      filtered = filtered.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    if (filterRole !== 'all') {
-      filtered = filtered.filter(user => user.role === filterRole)
-    }
-
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(user => user.status === filterStatus)
-    }
-
-    setFilteredUsers(filtered)
-  }, [users, searchTerm, filterRole, filterStatus])
-
-  const handleUserStatusChange = (userId: string, newStatus: 'active' | 'inactive' | 'suspended') => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, status: newStatus } : user
-    ))
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `admin-report-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
-  const handleUserRoleChange = (userId: string, newRole: 'admin' | 'moderator' | 'user') => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
-    ))
-  }
-
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(user => user.id !== userId))
-  }
-
-  const handleSettingsChange = (setting: keyof AdminSettings, value: boolean | number) => {
-    setAdminSettings(prev => ({
-      ...prev,
-      [setting]: value
-    }))
-  }
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-red-500'
-      case 'moderator': return 'bg-blue-500'
-      default: return 'bg-gray-500'
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500'
-      case 'inactive': return 'bg-yellow-500'
-      case 'suspended': return 'bg-red-500'
-      default: return 'bg-gray-500'
-    }
+  if (!currentUser?.isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900 flex items-center justify-center">
+        <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-4">Acesso Negado</h2>
+            <p className="text-gray-300 mb-6">Você não tem permissão para acessar o painel administrativo.</p>
+            <Button onClick={() => window.location.href = '/'} className="bg-gradient-to-r from-emerald-500 to-teal-600">
+              Voltar ao Início
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900">
-      {/* Header */}
-      <div className="bg-white/10 backdrop-blur-xl border-b border-white/20">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-red-500 to-orange-500 p-3 rounded-xl">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Painel Administrativo</h1>
-                <p className="text-gray-300">BetterLife Gyn - Sistema de Gerenciamento</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge className="bg-red-500/20 text-red-300 border-red-500/30 px-4 py-2">
-                <Crown className="w-4 h-4 mr-2" />
-                Administrador
-              </Badge>
-              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                <Settings className="w-4 h-4 mr-2" />
-                Configurações
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 rounded-2xl w-fit mx-auto mb-6">
+            <Shield className="w-12 h-12 text-white" />
           </div>
+          <h1 className="text-5xl font-bold text-white mb-6">Painel Administrativo</h1>
+          <p className="text-xl text-gray-300">Métricas e relatórios do sistema</p>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-8">
-          <TabsList className="bg-white/10 backdrop-blur-xl border border-white/20">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-white/20">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-white/20">
-              <Users className="w-4 h-4 mr-2" />
-              Usuários
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-white/20">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Análises
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-white/20">
-              <Settings className="w-4 h-4 mr-2" />
-              Sistema
-            </TabsTrigger>
-          </TabsList>
+        {/* Navigation Tabs */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
+          <Button
+            variant={activeTab === 'overview' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('overview')}
+            className="flex items-center gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            Visão Geral
+          </Button>
+          <Button
+            variant={activeTab === 'users' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('users')}
+            className="flex items-center gap-2"
+          >
+            <Users className="w-4 h-4" />
+            Usuários
+          </Button>
+          <Button
+            variant={activeTab === 'metrics' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('metrics')}
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="w-4 h-4" />
+            Métricas
+          </Button>
+          <Button
+            variant={activeTab === 'reports' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('reports')}
+            className="flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Relatórios
+          </Button>
+        </div>
 
-          {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="space-y-8">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
             {/* Estatísticas Principais */}
             <div className="grid md:grid-cols-4 gap-6">
               <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-300 text-sm">Total de Usuários</p>
-                      <p className="text-3xl font-bold text-white">{systemStats.totalUsers.toLocaleString()}</p>
-                      <p className="text-emerald-400 text-sm">+{systemStats.userGrowth}% este mês</p>
-                    </div>
-                    <Users className="w-8 h-8 text-emerald-400" />
+                <CardContent className="p-6 text-center">
+                  <Users className="w-8 h-8 text-purple-400 mx-auto mb-4" />
+                  <div className="text-3xl font-bold text-white mb-2">{stats.totalUsers}</div>
+                  <div className="text-gray-300">Total de Usuários</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+                <CardContent className="p-6 text-center">
+                  <Crown className="w-8 h-8 text-amber-400 mx-auto mb-4" />
+                  <div className="text-3xl font-bold text-white mb-2">{stats.proUsers}</div>
+                  <div className="text-gray-300">Usuários PRO</div>
+                  <div className="text-sm text-amber-300 mt-1">
+                    {stats.conversionRate.toFixed(1)}% conversão
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-300 text-sm">Usuários Ativos</p>
-                      <p className="text-3xl font-bold text-white">{systemStats.activeUsers.toLocaleString()}</p>
-                      <p className="text-teal-400 text-sm">{systemStats.retentionRate}% retenção</p>
-                    </div>
-                    <UserCheck className="w-8 h-8 text-teal-400" />
-                  </div>
+                <CardContent className="p-6 text-center">
+                  <Activity className="w-8 h-8 text-green-400 mx-auto mb-4" />
+                  <div className="text-3xl font-bold text-white mb-2">{stats.activeUsers}</div>
+                  <div className="text-gray-300">Usuários Ativos</div>
+                  <div className="text-sm text-green-300 mt-1">Últimos 7 dias</div>
                 </CardContent>
               </Card>
 
               <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-300 text-sm">Usuários PRO</p>
-                      <p className="text-3xl font-bold text-white">{systemStats.proUsers.toLocaleString()}</p>
-                      <p className="text-purple-400 text-sm">{((systemStats.proUsers / systemStats.totalUsers) * 100).toFixed(1)}% conversão</p>
-                    </div>
-                    <Crown className="w-8 h-8 text-purple-400" />
+                <CardContent className="p-6 text-center">
+                  <Target className="w-8 h-8 text-emerald-400 mx-auto mb-4" />
+                  <div className="text-3xl font-bold text-white mb-2">
+                    R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-300 text-sm">Receita Mensal</p>
-                      <p className="text-3xl font-bold text-white">R$ {systemStats.totalRevenue.toLocaleString()}</p>
-                      <p className="text-green-400 text-sm">+12.5% este mês</p>
-                    </div>
-                    <DollarSign className="w-8 h-8 text-green-400" />
-                  </div>
+                  <div className="text-gray-300">Receita Mensal</div>
+                  <div className="text-sm text-emerald-300 mt-1">Estimada</div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Métricas Adicionais */}
+            {/* Métricas de Engajamento */}
             <div className="grid md:grid-cols-2 gap-8">
               <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
                 <CardHeader>
-                  <CardTitle className="text-emerald-400 flex items-center gap-2">
-                    <Activity className="w-5 h-5" />
-                    Atividade dos Usuários
+                  <CardTitle className="text-2xl text-purple-400 flex items-center gap-2">
+                    <BarChart3 className="w-6 h-6" />
+                    Métricas de Engajamento
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Total de Treinos</span>
-                    <span className="text-white font-bold">{systemStats.totalWorkouts.toLocaleString()}</span>
+                    <span className="text-gray-300">Total de Treinos:</span>
+                    <span className="text-white font-bold">{stats.totalWorkouts.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Média de Perda de Peso</span>
-                    <span className="text-emerald-400 font-bold">{systemStats.avgWeightLoss.toFixed(1)}kg</span>
+                    <span className="text-gray-300">Calorias Queimadas:</span>
+                    <span className="text-white font-bold">{stats.totalCaloriesBurned.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Taxa de Engajamento</span>
-                    <span className="text-teal-400 font-bold">85.2%</span>
+                    <span className="text-gray-300">Perda de Peso Média:</span>
+                    <span className="text-white font-bold">{stats.averageWeightLoss.toFixed(1)}kg</span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-gray-300 mb-2">
+                      <span>Taxa de Conversão PRO</span>
+                      <span>{stats.conversionRate.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={stats.conversionRate} className="h-3" />
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
                 <CardHeader>
-                  <CardTitle className="text-teal-400 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5" />
-                    Alertas do Sistema
+                  <CardTitle className="text-2xl text-indigo-400 flex items-center gap-2">
+                    <Calendar className="w-6 h-6" />
+                    Crescimento
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
-                    <Clock className="w-4 h-4 text-yellow-400" />
-                    <span className="text-yellow-300 text-sm">3 usuários com assinaturas expirando em 7 dias</span>
+                <CardContent className="space-y-6">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-indigo-400 mb-2">
+                      +{Math.floor(stats.totalUsers * 0.15)}
+                    </div>
+                    <div className="text-gray-300">Novos usuários este mês</div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-red-500/20 rounded-lg border border-red-500/30">
-                    <UserX className="w-4 h-4 text-red-400" />
-                    <span className="text-red-300 text-sm">1 usuário suspenso aguarda revisão</span>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-purple-400 mb-2">
+                      +{Math.floor(stats.proUsers * 0.25)}
+                    </div>
+                    <div className="text-gray-300">Upgrades PRO este mês</div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/30">
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span className="text-green-300 text-sm">Sistema funcionando normalmente</span>
+                  <div className="text-center">
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-lg px-4 py-2">
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      +23% crescimento
+                    </Badge>
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            {/* Filtros e Busca */}
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="space-y-6">
             <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                  <div className="flex gap-4 items-center">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input
-                        placeholder="Buscar usuários..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                      />
-                    </div>
-                    <Select value={filterRole} onValueChange={setFilterRole}>
-                      <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Função" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="all" className="text-white">Todas</SelectItem>
-                        <SelectItem value="admin" className="text-white">Admin</SelectItem>
-                        <SelectItem value="moderator" className="text-white">Moderador</SelectItem>
-                        <SelectItem value="user" className="text-white">Usuário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="all" className="text-white">Todos</SelectItem>
-                        <SelectItem value="active" className="text-white">Ativo</SelectItem>
-                        <SelectItem value="inactive" className="text-white">Inativo</SelectItem>
-                        <SelectItem value="suspended" className="text-white">Suspenso</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                      <Download className="w-4 h-4 mr-2" />
-                      Exportar
-                    </Button>
-                    <Button className="bg-emerald-500 hover:bg-emerald-600">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Novo Usuário
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Lista de Usuários */}
-            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-              <CardContent className="p-0">
+              <CardHeader>
+                <CardTitle className="text-2xl text-purple-400 flex items-center gap-2">
+                  <Users className="w-6 h-6" />
+                  Usuários Registrados ({users.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="border-b border-white/20">
-                      <tr>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Usuário</th>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Função</th>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Status</th>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Plano</th>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Treinos</th>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Peso Perdido</th>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Último Login</th>
-                        <th className="text-left p-4 text-gray-300 font-semibold">Ações</th>
+                    <thead>
+                      <tr className="border-b border-white/20">
+                        <th className="text-left py-3 px-4 text-gray-300">Nome</th>
+                        <th className="text-left py-3 px-4 text-gray-300">Email</th>
+                        <th className="text-left py-3 px-4 text-gray-300">Tipo</th>
+                        <th className="text-left py-3 px-4 text-gray-300">Sequência</th>
+                        <th className="text-left py-3 px-4 text-gray-300">Treinos</th>
+                        <th className="text-left py-3 px-4 text-gray-300">Cadastro</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.map((user) => (
+                      {users.map((user) => (
                         <tr key={user.id} className="border-b border-white/10 hover:bg-white/5">
-                          <td className="p-4">
-                            <div>
-                              <div className="text-white font-medium">{user.name}</div>
-                              <div className="text-gray-400 text-sm">{user.email}</div>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-medium">{user.name}</span>
+                              {user.isAdmin && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Shield className="w-3 h-3 mr-1" />
+                                  Admin
+                                </Badge>
+                              )}
                             </div>
                           </td>
-                          <td className="p-4">
-                            <Badge className={`${getRoleColor(user.role)} text-white`}>
-                              {user.role}
+                          <td className="py-3 px-4 text-gray-300">{user.email}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={user.isPro ? "bg-gradient-to-r from-amber-500 to-orange-500" : "bg-gray-600"}>
+                              {user.isPro ? 'PRO' : 'Free'}
                             </Badge>
                           </td>
-                          <td className="p-4">
-                            <Badge className={`${getStatusColor(user.status)} text-white`}>
-                              {user.status}
-                            </Badge>
-                          </td>
-                          <td className="p-4">
-                            {user.isPro ? (
-                              <Badge className="bg-purple-500 text-white">
-                                <Crown className="w-3 h-3 mr-1" />
-                                PRO
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="border-gray-500 text-gray-400">
-                                Gratuito
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="p-4 text-white">{user.totalWorkouts}</td>
-                          <td className="p-4 text-emerald-400 font-semibold">{user.weightLoss}kg</td>
-                          <td className="p-4 text-gray-300">{user.lastLogin.toLocaleDateString()}</td>
-                          <td className="p-4">
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setSelectedUser(user)
-                                  setIsEditDialogOpen(true)
-                                }}
-                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/20"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white">{user.streakDays}</span>
+                              {user.streakDays > 7 && <span className="text-orange-400">🔥</span>}
                             </div>
+                          </td>
+                          <td className="py-3 px-4 text-white">{user.completedWorkouts}</td>
+                          <td className="py-3 px-4 text-gray-300">
+                            {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                           </td>
                         </tr>
                       ))}
@@ -551,271 +378,152 @@ export default function AdminPanel() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="text-emerald-400">Crescimento de Usuários</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Janeiro</span>
-                      <span className="text-white font-bold">1,234</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Fevereiro</span>
-                      <span className="text-white font-bold">1,456</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Março</span>
-                      <span className="text-white font-bold">1,678</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Abril</span>
-                      <span className="text-white font-bold">1,890</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="text-teal-400">Receita por Mês</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Janeiro</span>
-                      <span className="text-green-400 font-bold">R$ 12,450</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Fevereiro</span>
-                      <span className="text-green-400 font-bold">R$ 15,230</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Março</span>
-                      <span className="text-green-400 font-bold">R$ 18,670</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Abril</span>
-                      <span className="text-green-400 font-bold">R$ 21,890</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
+        {/* Metrics Tab */}
+        {activeTab === 'metrics' && (
+          <div className="grid md:grid-cols-2 gap-8">
             <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
               <CardHeader>
-                <CardTitle className="text-emerald-400">Configurações do Sistema</CardTitle>
+                <CardTitle className="text-2xl text-purple-400">Top Performers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {users
+                    .sort((a, b) => b.completedWorkouts - a.completedWorkouts)
+                    .slice(0, 5)
+                    .map((user, index) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className="text-white font-medium">{user.name}</div>
+                            <div className="text-gray-400 text-sm">{user.completedWorkouts} treinos</div>
+                          </div>
+                        </div>
+                        <Award className="w-5 h-5 text-amber-400" />
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-2xl text-indigo-400">Usuários Mais Ativos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {users
+                    .sort((a, b) => b.streakDays - a.streakDays)
+                    .slice(0, 5)
+                    .map((user, index) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className="text-white font-medium">{user.name}</div>
+                            <div className="text-gray-400 text-sm">{user.streakDays} dias consecutivos</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-orange-400">🔥</span>
+                          <span className="text-white font-bold">{user.streakDays}</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <div className="space-y-8">
+            <Card className="border-0 bg-white/10 backdrop-blur-xl shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-2xl text-purple-400 flex items-center gap-2">
+                  <FileText className="w-6 h-6" />
+                  Relatórios e Exportações
+                </CardTitle>
                 <CardDescription className="text-gray-300">
-                  Gerencie as configurações globais da aplicação
+                  Gere e baixe relatórios detalhados do sistema
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-white">Modo de Manutenção</Label>
-                        <p className="text-sm text-gray-400">Desabilita acesso para usuários</p>
-                      </div>
-                      <Button
-                        variant={adminSettings.maintenanceMode ? "destructive" : "outline"}
-                        onClick={() => handleSettingsChange('maintenanceMode', !adminSettings.maintenanceMode)}
-                      >
-                        {adminSettings.maintenanceMode ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-white">Registro de Novos Usuários</Label>
-                        <p className="text-sm text-gray-400">Permite novos cadastros</p>
-                      </div>
-                      <Button
-                        variant={adminSettings.registrationEnabled ? "default" : "outline"}
-                        onClick={() => handleSettingsChange('registrationEnabled', !adminSettings.registrationEnabled)}
-                      >
-                        {adminSettings.registrationEnabled ? <CheckCircle className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-white">Recursos PRO</Label>
-                        <p className="text-sm text-gray-400">Habilita funcionalidades premium</p>
-                      </div>
-                      <Button
-                        variant={adminSettings.proFeaturesEnabled ? "default" : "outline"}
-                        onClick={() => handleSettingsChange('proFeaturesEnabled', !adminSettings.proFeaturesEnabled)}
-                      >
-                        {adminSettings.proFeaturesEnabled ? <Crown className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                      </Button>
-                    </div>
+                  <div className="p-6 bg-white/5 rounded-lg border border-white/10">
+                    <h3 className="text-lg font-semibold text-white mb-2">Relatório Completo</h3>
+                    <p className="text-gray-300 mb-4">
+                      Exporta todos os dados de usuários, métricas e estatísticas
+                    </p>
+                    <Button
+                      onClick={exportData}
+                      className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Exportar JSON
+                    </Button>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-white">Notificações por Email</Label>
-                        <p className="text-sm text-gray-400">Envia emails automáticos</p>
-                      </div>
-                      <Button
-                        variant={adminSettings.emailNotifications ? "default" : "outline"}
-                        onClick={() => handleSettingsChange('emailNotifications', !adminSettings.emailNotifications)}
-                      >
-                        {adminSettings.emailNotifications ? <Mail className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-white">Backup Automático</Label>
-                        <p className="text-sm text-gray-400">Backup diário dos dados</p>
-                      </div>
-                      <Button
-                        variant={adminSettings.dataBackup ? "default" : "outline"}
-                        onClick={() => handleSettingsChange('dataBackup', !adminSettings.dataBackup)}
-                      >
-                        {adminSettings.dataBackup ? <Save className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-white">Analytics</Label>
-                        <p className="text-sm text-gray-400">Coleta dados de uso</p>
-                      </div>
-                      <Button
-                        variant={adminSettings.analyticsEnabled ? "default" : "outline"}
-                        onClick={() => handleSettingsChange('analyticsEnabled', !adminSettings.analyticsEnabled)}
-                      >
-                        {adminSettings.analyticsEnabled ? <BarChart3 className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                      </Button>
-                    </div>
+                  <div className="p-6 bg-white/5 rounded-lg border border-white/10">
+                    <h3 className="text-lg font-semibold text-white mb-2">Relatório de Usuários</h3>
+                    <p className="text-gray-300 mb-4">
+                      Lista detalhada de todos os usuários registrados
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/20"
+                    >
+                      <UserCheck className="w-4 h-4 mr-2" />
+                      Gerar CSV
+                    </Button>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-white/20">
-                  <div className="space-y-2">
-                    <Label className="text-white">Máximo de Usuários por Dia</Label>
-                    <Input
-                      type="number"
-                      value={adminSettings.maxUsersPerDay}
-                      onChange={(e) => handleSettingsChange('maxUsersPerDay', parseInt(e.target.value))}
-                      className="bg-white/10 border-white/20 text-white"
-                    />
+                <div className="p-6 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 rounded-lg border border-purple-500/30">
+                  <h3 className="text-xl font-semibold text-white mb-4">Resumo Executivo</h3>
+                  <div className="grid md:grid-cols-3 gap-6 text-center">
+                    <div>
+                      <div className="text-3xl font-bold text-purple-400 mb-2">{stats.totalUsers}</div>
+                      <div className="text-gray-300">Total de Usuários</div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-indigo-400 mb-2">
+                        {stats.conversionRate.toFixed(1)}%
+                      </div>
+                      <div className="text-gray-300">Taxa de Conversão</div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-emerald-400 mb-2">
+                        R$ {stats.monthlyRevenue.toLocaleString('pt-BR')}
+                      </div>
+                      <div className="text-gray-300">Receita Mensal</div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-white">Timeout de Sessão (minutos)</Label>
-                    <Input
-                      type="number"
-                      value={adminSettings.sessionTimeout}
-                      onChange={(e) => handleSettingsChange('sessionTimeout', parseInt(e.target.value))}
-                      className="bg-white/10 border-white/20 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-6">
-                  <Button className="bg-emerald-500 hover:bg-emerald-600">
-                    <Save className="w-4 h-4 mr-2" />
-                    Salvar Configurações
-                  </Button>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
+
+        {/* Back Button */}
+        <div className="text-center mt-12">
+          <Button
+            onClick={() => window.location.href = '/'}
+            variant="outline"
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            Voltar ao Dashboard
+          </Button>
+        </div>
       </div>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Modifique as informações e permissões do usuário
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Nome</Label>
-                  <Input
-                    value={selectedUser.name}
-                    className="bg-slate-700 border-slate-600"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    value={selectedUser.email}
-                    className="bg-slate-700 border-slate-600"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Função</Label>
-                  <Select
-                    value={selectedUser.role}
-                    onValueChange={(value: 'admin' | 'moderator' | 'user') => 
-                      handleUserRoleChange(selectedUser.id, value)
-                    }
-                  >
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="user">Usuário</SelectItem>
-                      <SelectItem value="moderator">Moderador</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={selectedUser.status}
-                    onValueChange={(value: 'active' | 'inactive' | 'suspended') => 
-                      handleUserStatusChange(selectedUser.id, value)
-                    }
-                  >
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
-                      <SelectItem value="suspended">Suspenso</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button className="bg-emerald-500 hover:bg-emerald-600">
-                  Salvar Alterações
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
