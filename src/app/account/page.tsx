@@ -486,8 +486,8 @@ export default function AccountPage() {
                   <Select
                     value={profileData.unit}
                     onValueChange={(value) => {
-                      setProfileData({...profileData, unit: value})
-                      updateUser({ unit: value as any })
+                      setProfileData({...profileData, unit: value as "metric" | "imperial"})
+                      updateUser({ unit: value as "metric" | "imperial" })
                     }}
                   >
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
